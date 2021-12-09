@@ -1,0 +1,127 @@
+## List of configuration settings
+## for vmagent deployment
+vmagent:
+  ## container name
+  name: "vmagent"
+  image:
+    repository: victoriametrics/vmagent
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  ## targetsCount defines how many copies of nodeexporter
+  ## to add as scrape targets.
+  ## affects metrics volume and cardinality
+  targetsCount: 1000
+
+  ## defines how frequently scrape targets
+  scrapeInterval: 5s
+
+  ## remote-write configuration for vmagent
+  remoteWrite:
+    ## single-node: http://<victoriametrics-addr>:8428/api/v1/write
+    ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
+    url: ""
+    ## auth token for VictoriaMetrics.
+    ## leave empty if no token configured
+    token: ""
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2000Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  nodeSelector: { }
+  affinity: { }
+  tolerations: [ ]
+
+  service:
+    hostPort: 8429
+
+## List of configuration settings
+## for nginx + nodeexporter deployment
+nodeExporter:
+  ## container name
+  name: "nodeexporter"
+  image:
+    repository: prom/node-exporter
+    pullPolicy: IfNotPresent
+    tag: "v1.3.1"
+
+  ## Security context to be added to node-exporter pods
+  ##
+  securityContext:
+    fsGroup: 65534
+    runAsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2000Mi
+    requests:
+      cpu: 500m
+      memory: 500Mi
+
+  nodeSelector: { }
+  affinity: { }
+  tolerations: [ ]
+
+  service:
+    ## port for nodeexporter to run
+    hostPort: 9101
+    ## port for nginx to run
+    ## vmagent will use this port for scraping
+    hostPortCached: 9102
+
+## List of configuration settings
+## for vmalert deployment
+vmalert:
+  ## whether to deploy vmalert
+  enabled: true
+  ## container name
+  name: "vmalert"
+  image:
+    repository: victoriametrics/vmalert
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  ## how often to evaluate rules
+  evaluationInterval: 30s
+
+  ## datasource defines address for rule execution
+  datasource:
+    ## single-node: http://<victoriametrics-addr>:8428
+    ## cluster: http://<vminsert-addr>:8481/select/0/prometheus
+    url: ""
+    ## auth token for VictoriaMetrics.
+    ## leave empty if no token configured
+    token: ""
+
+  ## remote-write configuration for vmagent
+  remoteWrite:
+    ## single-node: http://<victoriametrics-addr>:8428/api/v1/write
+    ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
+    url: ""
+    ## auth token for VictoriaMetrics.
+    ## leave empty if no token configured
+    token: ""
+
+  resources: { }
+    # limits:
+    #   cpu: 200m
+    #   memory: 50Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 30Mi
+
+  nodeSelector: { }
+  affinity: { }
+  tolerations: [ ]
+
+  service:
+    hostPort: 8880
+    amPort: 9093

@@ -1,0 +1,12 @@
+{{- if .Values.vmalert.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  {{ include "vm-benchmark.fullname" . }}-vmalert-cm
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "vm-benchmark.labels" . | nindent 4 }}
+data:
+  alerts.yml: |
+{{ .Files.Get "files/alerts.yaml" | indent 4}}
+{{- end }}

@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vm-benchmark.fullname" . }}-nodeexporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "vm-benchmark.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+  {{- include "vm-benchmark.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+    {{- include "vm-benchmark.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ template "vm-benchmark.name" . }}-{{ .Values.nodeExporter.name }}
+          image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"
+          imagePullPolicy: "{{ .Values.nodeExporter.image.pullPolicy }}"
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --path.rootfs=/host/root
+            - --no-collector.wifi
+            - --no-collector.hwmon
+            - --no-collector.nfs
+            - --collector.processes
+            - --web.max-requests=40
+            - --web.listen-address=:{{ .Values.nodeExporter.service.hostPort }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.nodeExporter.service.hostPort }}
+              hostPort: {{ .Values.nodeExporter.service.hostPort }}
+          resources:
+{{ toYaml .Values.nodeExporter.resources | indent 12 }}
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly:  true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+            - name: root
+              mountPath: /host/root
+              mountPropagation: HostToContainer
+              readOnly: true
+        - name: {{ template "vm-benchmark.name" . }}-nginx
+          image: nginx
+          args:
+            - nginx
+            - -c
+            - /opt/nginx/nginx.conf
+          ports:
+            - containerPort: {{ .Values.nodeExporter.service.hostPortCached }}
+              name: proxy
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /opt/nginx
+              name: nginx-conf
+            - mountPath: /tmp/nginx
+              name: nginx-cache
+            - mountPath: /etc/nginx
+              name: nginx-empty
+      hostNetwork: true
+      {{- if .Values.nodeExporter.tolerations }}
+      tolerations:
+{{ toYaml .Values.nodeExporter.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeExporter.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeExporter.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeExporter.securityContext }}
+      securityContext:
+{{ toYaml .Values.nodeExporter.securityContext | indent 8 }}
+      {{- end }}
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: root
+          hostPath:
+            path: /
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-conf
+          configMap:
+            name: {{ include "vm-benchmark.fullname" . }}-nginx-conf
+        - name: nginx-empty
+          emptyDir: {}

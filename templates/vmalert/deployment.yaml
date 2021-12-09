@@ -1,0 +1,77 @@
+{{- if .Values.vmalert.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vm-benchmark.fullname" . }}-vmalert
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "vm-benchmark.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+  {{- include "vm-benchmark.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+    {{- include "vm-benchmark.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ template "vm-benchmark.name" . }}-{{ .Values.vmalert.name }}
+          image: "{{ .Values.vmalert.image.repository }}:{{ .Values.vmalert.image.tag }}"
+          imagePullPolicy: "{{ .Values.vmalert.image.pullPolicy }}"
+          args:
+            - --httpListenAddr=:{{ .Values.vmalert.service.hostPort }}
+            - --notifier.url=http://127.0.0.1:{{ .Values.vmalert.service.amPort }}
+            - --rule=/config/alerts.yml
+            - --evaluationInterval={{ .Values.vmalert.evaluationInterval }}
+            - --datasource.url={{ .Values.vmalert.datasource.url }}
+            {{- if .Values.vmalert.datasource.token }}
+            - --datasource.bearerToken={{ .Values.vmalert.datasource.token }}
+            {{- end }}
+            {{- if .Values.vmalert.remoteWrite.url }}
+            - --remoteWrite.url={{ .Values.vmalert.remoteWrite.url }}
+            {{- end }}
+            {{- if .Values.vmalert.remoteWrite.token }}
+            - --remoteWrite.bearerToken={{ .Values.vmalert.remoteWrite.token }}
+          {{- end }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.vmalert.service.hostPort }}
+              hostPort: {{ .Values.vmalert.service.hostPort }}
+          resources:
+{{ toYaml .Values.vmalert.resources | indent 12 }}
+          volumeMounts:
+            - name: vmalert-cfg
+              mountPath: /config
+
+        - name: {{ template "vm-benchmark.name" . }}-alertmanager
+          image: prom/alertmanager
+          imagePullPolicy: "{{ .Values.vmalert.image.pullPolicy }}"
+          args:
+            - --web.listen-address=:{{ .Values.vmalert.service.amPort }}
+            - --config.file=/config/alertmanager.yml
+          ports:
+            - name: am
+              containerPort: {{ .Values.vmalert.service.amPort }}
+              hostPort: {{ .Values.vmalert.service.amPort }}
+          resources:
+          {{ toYaml .Values.vmalert.resources | indent 12 }}
+          volumeMounts:
+            - name: alertmanager-cfg
+              mountPath: /config
+      {{- if .Values.vmalert.tolerations }}
+      tolerations:
+{{ toYaml .Values.vmalert.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.vmalert.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.vmalert.nodeSelector | indent 8 }}
+      {{- end }}
+      volumes:
+      - name: vmalert-cfg
+        configMap:
+          name: {{ include "vm-benchmark.fullname" . }}-vmalert-cm
+      - name: alertmanager-cfg
+        configMap:
+          name: {{ include "vm-benchmark.fullname" . }}-alertmanager-cm
+{{- end }}

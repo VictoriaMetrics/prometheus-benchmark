@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vm-benchmark.fullname" . }}-vmagent
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "vm-benchmark.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+  {{- include "vm-benchmark.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+    {{- include "vm-benchmark.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ template "vm-benchmark.name" . }}-{{ .Values.vmagent.name }}
+          image: "{{ .Values.vmagent.image.repository }}:{{ .Values.vmagent.image.tag }}"
+          imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
+          args:
+            - --httpListenAddr=:{{ .Values.vmagent.service.hostPort }}
+            - --promscrape.config=/config/scrape.yml
+            - --remoteWrite.url={{ .Values.vmagent.remoteWrite.url }}
+            {{- if .Values.vmagent.remoteWrite.token }}
+            - --remoteWrite.bearerToken={{ .Values.vmagent.remoteWrite.token }}
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.vmagent.service.hostPort }}
+              hostPort: {{ .Values.vmagent.service.hostPort }}
+          resources:
+{{ toYaml .Values.vmagent.resources | indent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      {{- if .Values.vmagent.tolerations }}
+      tolerations:
+{{ toYaml .Values.vmagent.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.vmagent.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.vmagent.nodeSelector | indent 8 }}
+      {{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "vm-benchmark.fullname" . }}-vmagent-cm

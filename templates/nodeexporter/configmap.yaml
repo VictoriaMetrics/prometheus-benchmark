@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "vm-benchmark.fullname" . }}-nginx-conf
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "vm-benchmark.labels" . | nindent 4 }}
+data:
+  nginx.conf: |
+    daemon off;
+    worker_processes  auto;
+    pid /tmp/nginx.pid;
+    worker_rlimit_nofile 608192;
+      events {
+        worker_connections  10000;  ## Default: 1024
+        multi_accept on; ## https://nginx.org/en/docs/ngx_core_module.html#multi_accept
+        use epoll; ## https://nginx.org/en/docs/events.html#epoll
+    }
+    http {
+      proxy_cache_path /tmp/nginx/client_temp levels=1:2 keys_zone=all:1m max_size=1g;
+      client_body_temp_path /tmp/nginx 1 2;
+      proxy_temp_path /tmp/nginx 1 2;
+      fastcgi_temp_path /tmp/nginx 1 2;
+      uwsgi_temp_path /tmp/nginx 1 2;
+      scgi_temp_path /tmp/nginx 1 2;
+      server {
+        listen {{ .Values.nodeExporter.service.hostPortCached }};
+        server_name _;
+        access_log off;
+        error_log off;
+        tcp_nopush on;
+        tcp_nodelay on;
+        server_tokens off;
+
+        location / {
+          proxy_pass http://127.0.0.1:{{ .Values.nodeExporter.service.hostPort }};
+          proxy_cache all;
+          proxy_cache_valid any {{ .Values.vmagent.scrapeInterval }};
+          proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+          proxy_cache_background_update on;
+          proxy_cache_lock on;
+          proxy_cache_lock_timeout {{ .Values.vmagent.scrapeInterval }};
+      }
+    }
+    }
