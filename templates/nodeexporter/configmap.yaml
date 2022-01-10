@@ -31,6 +31,7 @@ data:
         tcp_nopush on;
         tcp_nodelay on;
         server_tokens off;
+        keepalive_requests 1000;
 
         location / {
           proxy_pass http://127.0.0.1:{{ .Values.nodeExporter.service.hostPort }};
