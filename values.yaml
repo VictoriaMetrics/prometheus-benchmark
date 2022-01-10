@@ -16,14 +16,15 @@ vmagent:
   ## defines how frequently scrape targets
   scrapeInterval: 5s
 
-  ## remote-write configuration for vmagent
+  ## remote-write configurations for vmagent
+  ## vmagent will replicate data to all configured URLs
   remoteWrite:
-    ## single-node: http://<victoriametrics-addr>:8428/api/v1/write
-    ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
-    url: ""
-    ## auth token for VictoriaMetrics.
-    ## leave empty if no token configured
-    token: ""
+      ## single-node: http://<victoriametrics-addr>:8428/api/v1/write
+      ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
+    - url: ""
+      ## auth token for VictoriaMetrics.
+      ## leave empty if no token configured
+      token: ""
 
   resources:
     limits:

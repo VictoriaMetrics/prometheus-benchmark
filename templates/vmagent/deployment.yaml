@@ -22,9 +22,11 @@ spec:
             - --httpListenAddr=:{{ .Values.vmagent.service.hostPort }}
             - --promscrape.streamParse=true
             - --promscrape.config=/config/scrape.yml
-            - --remoteWrite.url={{ .Values.vmagent.remoteWrite.url }}
-            {{- if .Values.vmagent.remoteWrite.token }}
-            - --remoteWrite.bearerToken={{ .Values.vmagent.remoteWrite.token }}
+            {{- range .Values.vmagent.remoteWrite }}
+            - --remoteWrite.url={{ .url }}
+            {{- if .token }}
+            - --remoteWrite.bearerToken={{ .token }}
+            {{- end }}
             {{- end }}
           ports:
             - name: metrics

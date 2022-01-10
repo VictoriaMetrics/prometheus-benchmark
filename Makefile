@@ -11,7 +11,7 @@ install:
 
 # delete the chart from configured namespace
 delete:
-	 helm uninstall $(RELEASE_NAME) -n $(NAMESPACE)
+	helm uninstall $(RELEASE_NAME) -n $(NAMESPACE)
 
 upgrade:
 	helm upgrade $(RELEASE_NAME) -n $(NAMESPACE)

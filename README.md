@@ -7,7 +7,7 @@ our cloud solution.
 The helm chart deploys three pods:
 * nodeexporter + nginx (2 containers in one pod), where nodeexporter used as a metrics source
 and nginx as cache-server to reduce pressure on nodeexporter;
-* vmagent to scrape nodeexporter metrics and forward via remote-write to configured destination;
+* vmagent to scrape nodeexporter metrics and forward via remote-write to configured destinations;
 * vmalert + alertmanager (2 containers in one pod), where vmalert executes 
 [alerting rules](files/alerts.yaml) and sends notifications to alertmanager. Alertmanager is configured 
 to blackhole received notifications. vmalert + alertmanager pod is optional and used for generating the 
