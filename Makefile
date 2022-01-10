@@ -7,7 +7,7 @@ debug:
 
 # install the chart to configured namespace
 install:
-	helm install $(RELEASE_NAME) -n $(NAMESPACE) .
+	helm upgrade -i $(RELEASE_NAME) -n $(NAMESPACE) .
 
 # delete the chart from configured namespace
 delete:
