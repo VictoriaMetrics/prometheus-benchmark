@@ -1,8 +1,8 @@
-# VictoriaMetrics benchmark
+# Remote-write benchmark
 
-VictoriaMetrics benchmark helm chart is used for deploying a simple
+Remote-write benchmark helm chart is used for deploying a simple
 benchmark setup to k8s cluster. In VictoriaMetrics we use it to run tests against 
-our cloud solution.
+our cloud solution, compare performance and compression between releases.
 
 The helm chart deploys three pods:
 * nodeexporter + nginx (2 containers in one pod), where nodeexporter used as a metrics source
