@@ -55,6 +55,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "vm-benchmark.nginxCached" -}}
-{{- $port := .Values.nodeExporter.service.hostPortCached | int }}
+{{- $port := .Values.nodeExporter.hostPortCached | int }}
 {{- printf "%s-exporter.%s.svc:%d" (include "vm-benchmark.fullname" .) .Release.Namespace $port }}
 {{- end }}

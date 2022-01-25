@@ -11,15 +11,17 @@ spec:
   {{- include "vm-benchmark.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/vmagent/configmap.yaml") . | sha256sum }}
       labels:
-    {{- include "vm-benchmark.labels" . | nindent 8 }}
+    {{- include "vm-benchmark.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-        - name: {{ template "vm-benchmark.name" . }}-{{ .Values.vmagent.name }}
+        - name: vmagent
           image: "{{ .Values.vmagent.image.repository }}:{{ .Values.vmagent.image.tag }}"
           imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
           args:
-            - --httpListenAddr=:{{ .Values.vmagent.service.hostPort }}
+            - --httpListenAddr=:{{ .Values.vmagent.port }}
             - --promscrape.config=/config/scrape.yml
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}
@@ -29,8 +31,7 @@ spec:
             {{- end }}
           ports:
             - name: metrics
-              containerPort: {{ .Values.vmagent.service.hostPort }}
-              hostPort: {{ .Values.vmagent.service.hostPort }}
+              containerPort: {{ .Values.vmagent.port }}
           resources:
 {{ toYaml .Values.vmagent.resources | indent 12 }}
           volumeMounts:

@@ -24,7 +24,7 @@ data:
       uwsgi_temp_path /tmp/nginx 1 2;
       scgi_temp_path /tmp/nginx 1 2;
       server {
-        listen {{ .Values.nodeExporter.service.hostPortCached }};
+        listen {{ .Values.nodeExporter.hostPortCached }};
         server_name _;
         access_log off;
         error_log off;
@@ -34,7 +34,7 @@ data:
         keepalive_requests 1000;
 
         location / {
-          proxy_pass http://127.0.0.1:{{ .Values.nodeExporter.service.hostPort }};
+          proxy_pass http://127.0.0.1:{{ .Values.nodeExporter.hostPort }};
           proxy_cache all;
           proxy_cache_valid any 1s;
           proxy_cache_use_stale updating;
