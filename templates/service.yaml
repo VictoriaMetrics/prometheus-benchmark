@@ -10,9 +10,9 @@ spec:
   selector:
   {{- include "vm-benchmark.labels" . | nindent 6 }}
   ports:
-    - port: {{ .Values.nodeExporter.service.hostPort }}
+    - port: {{ .Values.nodeExporter.hostPort }}
       name: exporter
-      targetPort: {{ .Values.nodeExporter.service.hostPort }}
-    - port: {{ .Values.nodeExporter.service.hostPortCached }}
+      targetPort: {{ .Values.nodeExporter.hostPort }}
+    - port: {{ .Values.nodeExporter.hostPortCached }}
       name: proxy
-      targetPort: {{ .Values.nodeExporter.service.hostPortCached }}
+      targetPort: {{ .Values.nodeExporter.hostPortCached }}

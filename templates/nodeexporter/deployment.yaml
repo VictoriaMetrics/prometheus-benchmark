@@ -6,16 +6,20 @@ metadata:
   labels:
   {{- include "vm-benchmark.labels" . | nindent 4 }}
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
   {{- include "vm-benchmark.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/nodeexporter/configmap.yaml") . | sha256sum }}
       labels:
     {{- include "vm-benchmark.labels" . | nindent 8 }}
     spec:
       containers:
-        - name: {{ template "vm-benchmark.name" . }}-{{ .Values.nodeExporter.name }}
+        - name: nodeexporter
           image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"
           imagePullPolicy: "{{ .Values.nodeExporter.image.pullPolicy }}"
           args:
@@ -27,11 +31,10 @@ spec:
             - --no-collector.nfs
             - --collector.processes
             - --web.max-requests=40
-            - --web.listen-address=:{{ .Values.nodeExporter.service.hostPort }}
+            - --web.listen-address=:{{ .Values.nodeExporter.hostPort }}
           ports:
             - name: metrics
-              containerPort: {{ .Values.nodeExporter.service.hostPort }}
-              hostPort: {{ .Values.nodeExporter.service.hostPort }}
+              containerPort: {{ .Values.nodeExporter.hostPort }}
           resources:
 {{ toYaml .Values.nodeExporter.resources | indent 12 }}
           volumeMounts:
@@ -52,7 +55,7 @@ spec:
             - -c
             - /opt/nginx/nginx.conf
           ports:
-            - containerPort: {{ .Values.nodeExporter.service.hostPortCached }}
+            - containerPort: {{ .Values.nodeExporter.hostPortCached }}
               name: proxy
               protocol: TCP
           volumeMounts:
