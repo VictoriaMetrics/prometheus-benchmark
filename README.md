@@ -1,7 +1,9 @@
-# Remote-write benchmark
-
-Remote-write benchmark helm chart is used for deploying a simple
-benchmark setup to k8s cluster. In VictoriaMetrics we use it to run tests against 
+# Prometheus benchmark
+Prometheus benchmark helm chart is used for deploying a simple
+benchmark setup to k8s cluster for benchmarking read (executing PromQL/MetricsQL queries)
+and write (via [Remote Write](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write) protocol)
+path of Prometheus-compatible TSDBs. 
+In VictoriaMetrics we use it to run tests against 
 our cloud solution, compare performance and compression between releases.
 
 The helm chart deploys three pods:
@@ -14,6 +16,10 @@ to blackhole received notifications. vmalert + alertmanager pod is optional and 
 read load. To disable pod creation set `.Values.vmalert.enabled=false`.
 
 Please, check [values.yaml](values.yaml) for configuration params.
+
+## Articles
+
+[Benchmarking Prometheus-compatible time series databases](https://victoriametrics.com/blog/remote-write-benchmark/).
 
 ## How to run
 
