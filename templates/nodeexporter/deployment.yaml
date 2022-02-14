@@ -28,7 +28,11 @@ spec:
             - --path.rootfs=/host/root
             - --no-collector.wifi
             - --no-collector.hwmon
-            - --no-collector.nfs
+            - --no-collector.time
+            - --no-collector.timex
+            - --no-collector.arp
+            - --no-collector.netdev
+            - --no-collector.netstat
             - --collector.processes
             - --web.max-requests=40
             - --web.listen-address=:{{ .Values.nodeExporter.hostPort }}
