@@ -19,7 +19,7 @@ vmagent:
   remoteWrite:
       ## single-node: http://<victoriametrics-addr>:8428/api/v1/write
       ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
-    - url: ""
+    - url: "http://192.168.1.118:8428/api/v1/write"
       ## auth token for VictoriaMetrics.
       ## leave empty if no token configured
       token: ""
@@ -91,14 +91,14 @@ vmalert:
     - datasource:
         ## single-node: http://<victoriametrics-addr>:8428
         ## cluster: http://<vminsert-addr>:8481/select/0/prometheus
-        url: ""
+        url: "http://192.168.1.118:8428"
         ## auth token for VictoriaMetrics.
         ## leave empty if no token configured
         token: ""
       remoteWrite:
         ## single-node: http://<victoriametrics-addr>:8428/
         ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
-        url: ""
+        url: "http://192.168.1.118:8428/"
         ## auth token for VictoriaMetrics.
         ## leave empty if no token configured
         token: ""

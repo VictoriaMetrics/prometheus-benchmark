@@ -17,12 +17,13 @@ spec:
     {{- include "vm-benchmark.selectorLabels" . | nindent 8 }}
     spec:
       containers:
+        - name: # describe new image with new service
         - name: vmagent
           image: "{{ .Values.vmagent.image.repository }}:{{ .Values.vmagent.image.tag }}"
           imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
           args:
             - --httpListenAddr=:{{ .Values.vmagent.port }}
-            - --promscrape.config=/config/scrape.yml
+            - --promscrape.config=/config/scrape.yml #set http where to get config
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}
             {{- if .token }}
