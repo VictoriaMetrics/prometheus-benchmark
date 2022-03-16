@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"prometheus-benchmark/services/vmagent-config-update/models"
@@ -35,7 +34,6 @@ func Init(ctx context.Context, vmagentAddr string) httpserver.RequestHandler {
 }
 
 func (rh *requestHandler) handle(w http.ResponseWriter, r *http.Request) bool {
-	log.Printf("r.URL.Path => %s", r.URL.Path)
 	switch r.URL.Path {
 	case configPath:
 		return handleConfigRequest(rh.ctx, w, r)
@@ -54,12 +52,10 @@ func respondWithError(w http.ResponseWriter, r *http.Request, statusCode int, er
 func handleConfigRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 	if r.Method == http.MethodGet {
 		if _, err := w.Write(models.GetConfig()); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			return false
 		}
-		resp, err := http.Get(globalRH.vmagentAddr + reloadPath)
+		resp, err := http.Get("http://" + globalRH.vmagentAddr + reloadPath)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			return false
 		}
 		if resp.StatusCode/100 != 2 {
@@ -69,9 +65,9 @@ func handleConfigRequest(ctx context.Context, w http.ResponseWriter, r *http.Req
 				line = scanner.Text()
 			}
 			logger.Errorf("server returned HTTP status %s (%d): %s", resp.Status, resp.StatusCode, line)
-			w.WriteHeader(http.StatusBadRequest)
 			return false
 		}
+		w.Header().Set("Content-Type", "plain/text")
 		w.WriteHeader(http.StatusOK)
 		logger.Infof("Sent config to vmagent")
 		return true

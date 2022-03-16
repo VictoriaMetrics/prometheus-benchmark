@@ -26,7 +26,7 @@ spec:
           imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
           args:
             - --httpListenAddr=:{{ .Values.vmagent.port }}
-            - --promscrape.config=/config/scrape.yml
+            - --promscrape.config=http://localhost:8436/api/v1/config
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}
             {{- if .token }}

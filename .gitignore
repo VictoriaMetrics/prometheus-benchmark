@@ -16,3 +16,6 @@
 # vendor/
 bin
 gocache-for-docker
+.DS_Store
+.idea
+chart/templates/.DS_Store
