@@ -1,9 +1,14 @@
 package controllers
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+
+	"prometheus-benchmark/services/vmagent-config-update/models"
 
 	"github.com/VictoriaMetrics/VictoriaMetrics/lib/httpserver"
 	"github.com/VictoriaMetrics/VictoriaMetrics/lib/logger"
@@ -11,22 +16,26 @@ import (
 
 const (
 	configPath = "/api/v1/config"
+	reloadPath = "/-/reload"
 )
 
 var globalRH *requestHandler
 
 type requestHandler struct {
-	ctx context.Context
+	ctx         context.Context
+	vmagentAddr string
 }
 
-func Init(ctx context.Context) httpserver.RequestHandler {
+func Init(ctx context.Context, vmagentAddr string) httpserver.RequestHandler {
 	globalRH = &requestHandler{
-		ctx: ctx,
+		ctx:         ctx,
+		vmagentAddr: vmagentAddr,
 	}
 	return globalRH.handle
 }
 
 func (rh *requestHandler) handle(w http.ResponseWriter, r *http.Request) bool {
+	log.Printf("r.URL.Path => %s", r.URL.Path)
 	switch r.URL.Path {
 	case configPath:
 		return handleConfigRequest(rh.ctx, w, r)
@@ -44,23 +53,27 @@ func respondWithError(w http.ResponseWriter, r *http.Request, statusCode int, er
 
 func handleConfigRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 	if r.Method == http.MethodGet {
-
-		// data, err := models.GetAlertDataFromRequest(r.Body)
-		// if err != nil {
-		// 	return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("error decoding request from alert manager: %s", err))
-		// }
-		//
-		// request, err := models.PrepareLokiRequest(data)
-		// if err != nil {
-		// 	return respondWithError(w, r, http.StatusInternalServerError, fmt.Errorf("error prepare loki request: %s", err))
-		// }
-		//
-		// err = sender.Send(request)
-		// if err != nil {
-		// 	return respondWithError(w, r, http.StatusInternalServerError, fmt.Errorf("error send data to loki: %s", err))
-		// }
+		if _, err := w.Write(models.GetConfig()); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return false
+		}
+		resp, err := http.Get(globalRH.vmagentAddr + reloadPath)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return false
+		}
+		if resp.StatusCode/100 != 2 {
+			scanner := bufio.NewScanner(io.LimitReader(resp.Body, 1024))
+			line := ""
+			if scanner.Scan() {
+				line = scanner.Text()
+			}
+			logger.Errorf("server returned HTTP status %s (%d): %s", resp.Status, resp.StatusCode, line)
+			w.WriteHeader(http.StatusBadRequest)
+			return false
+		}
 		w.WriteHeader(http.StatusOK)
-		logger.Infof("Sent information to loki")
+		logger.Infof("Sent config to vmagent")
 		return true
 	}
 	return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("got unsupported HTTP method: %s", r.Method))

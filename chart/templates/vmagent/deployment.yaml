@@ -17,13 +17,16 @@ spec:
     {{- include "vm-benchmark.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-        - name: # describe new image with new service
+        - name: vmagent-config-updater
+          image: "{{ .Values.vmagent_config_update.image.repository }}:{{ .Values.vmagent_config_update.image.tag }}"
+          imagePullPolicy: "{{ .Values.vmagent_config_update.image.pullPolicy }}"
+
         - name: vmagent
           image: "{{ .Values.vmagent.image.repository }}:{{ .Values.vmagent.image.tag }}"
           imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
           args:
             - --httpListenAddr=:{{ .Values.vmagent.port }}
-            - --promscrape.config=/config/scrape.yml #set http where to get config
+            - --promscrape.config=/config/scrape.yml
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}
             {{- if .token }}
@@ -35,9 +38,6 @@ spec:
               containerPort: {{ .Values.vmagent.port }}
           resources:
 {{ toYaml .Values.vmagent.resources | indent 12 }}
-          volumeMounts:
-            - name: config
-              mountPath: /config
       {{- if .Values.vmagent.tolerations }}
       tolerations:
 {{ toYaml .Values.vmagent.tolerations | indent 8 }}
@@ -46,7 +46,3 @@ spec:
       nodeSelector:
 {{ toYaml .Values.vmagent.nodeSelector | indent 8 }}
       {{- end }}
-      volumes:
-      - name: config
-        configMap:
-          name: {{ include "vm-benchmark.fullname" . }}-vmagent-cm

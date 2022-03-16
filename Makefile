@@ -1,13 +1,15 @@
+include services/vmagent-config-update/Makefile
+
 RELEASE_NAME := vm-benchmark
 NAMESPACE := default # k8s namespace for installing the chart
 
 # print resulting manifests to console without applying them
 debug:
-	helm install --dry-run --debug $(RELEASE_NAME) .
+	helm install --dry-run --debug $(RELEASE_NAME) chart/
 
 # install the chart to configured namespace
 install:
-	helm upgrade -i $(RELEASE_NAME) -n $(NAMESPACE) .
+	helm upgrade -i $(RELEASE_NAME) -n $(NAMESPACE) chart/
 
 # delete the chart from configured namespace
 delete:
