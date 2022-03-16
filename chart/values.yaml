@@ -2,7 +2,7 @@ vmagent_config_update:
   image:
     repository: dmitrykmoon/vmagent-config-update
     pullPolicy: IfNotPresent
-    tag: "heads-churn_rate_bench-0-g045991b-dirty-65bba0af"
+    tag: "heads-churn_rate_bench-0-g116f719-dirty-72099b75"
 
 ## List of configuration settings
 ## for vmagent deployment
