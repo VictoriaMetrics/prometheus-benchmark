@@ -42,7 +42,7 @@ and nginx+nodeexporter pods.
 vmagent is configured to scrape and send its own metrics
 with job label `vmagent`. These metrics will be written to the
 configured `.Values.vmagent.url.remoteWrite` destination.
-Use [grafana dashboard](https://grafana.com/grafana/dashboards/12683)https://grafana.com/grafana/dashboards/11176
+Use [grafana dashboard](https://grafana.com/grafana/dashboards/12683)
 to monitor vmagent's state.
 
 vmagent is not aware of `url.remoteWrite` VictoriaMetrics configuration
@@ -50,4 +50,4 @@ or its components, so it can't scrape their metrics. Please, configure
 monitoring of `remoteWrite` destination manually by setting up an external monitoring
 or updating [configmap.yaml](templates/vmagent/configmap.yaml) with corresponding
 targets. Use grafana dashboards for [single](https://grafana.com/grafana/dashboards/10229)
-or [cluster]() versions of VictoriaMetrics.
+or [cluster](https://grafana.com/grafana/dashboards/11176) versions of VictoriaMetrics.
