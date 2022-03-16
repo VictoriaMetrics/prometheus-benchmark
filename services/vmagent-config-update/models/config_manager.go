@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"sync/atomic"
 
 	"github.com/VictoriaMetrics/VictoriaMetrics/lib/logger"
@@ -33,6 +32,5 @@ func GetConfig() []byte {
 	if !ok {
 		logger.Fatalf("BUG: unexpected type stored in config value")
 	}
-	log.Printf("CONFIG => %s", config)
 	return config
 }
