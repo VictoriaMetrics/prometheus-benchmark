@@ -17,8 +17,8 @@ import (
 
 var (
 	listenAddr           = flag.String("http.listenAddr", ":8436", "http service listener addr")
-	configUpdateInterval = flag.Duration("configUpdateInterval", time.Second*10, "interval when config will be updated")
-	targetsCount         = flag.Int("targetsCount", 5, "targetsCount defines how many copies of nodeexporter to add as scrape targets. affects metrics volume and cardinality")
+	configUpdateInterval = flag.Duration("configUpdateInterval", time.Minute*1, "interval when config will be updated")
+	targetsCount         = flag.Int("targetsCount", 1000, "targetsCount defines how many copies of nodeexporter to add as scrape targets. affects metrics volume and cardinality")
 	targetName           = flag.String("targetName", "vm-benchmark-exporter.default.svc:9102", "target name with host and port name")
 	scrapInterval        = flag.Duration("scrapInterval", time.Second*5, "defines how frequently scrape targets")
 	vmagentListenAddr    = flag.String("http.vmagentListenAddr", "localhost:8429", "http vmagent service listen addr")
