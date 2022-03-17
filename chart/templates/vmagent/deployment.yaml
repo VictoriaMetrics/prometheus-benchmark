@@ -27,6 +27,7 @@ spec:
           args:
             - --httpListenAddr=:{{ .Values.vmagent.port }}
             - --promscrape.config=http://localhost:8436/api/v1/config
+            - --promscrape.configCheckInterval=10s
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}
             {{- if .token }}
