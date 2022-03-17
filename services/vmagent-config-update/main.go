@@ -32,7 +32,7 @@ func main() {
 
 	c := models.InitConfigManager(models.NewConfig(
 		models.WithGlobalConfig(*scrapInterval),
-		models.WithScrapeConfig(*targetsCount, *targetName)))
+		models.WithScrapeConfig(*targetsCount, *percentOfUpdatingTargets, *targetName)))
 
 	r := runner.New(func(ctx context.Context) error {
 		return c.Update()

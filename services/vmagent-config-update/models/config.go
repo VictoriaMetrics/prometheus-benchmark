@@ -21,10 +21,12 @@ func NewConfig(options ...ConfigOptions) *Config {
 
 // Config represents essential parts from Prometheus config defined at https://prometheus.io/docs/prometheus/latest/configuration/configuration/
 type Config struct {
-	Global        GlobalConfig   `yaml:"global"`
-	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs,omitempty"`
-	targetCount   int
-	targetName    string
+	Global                   GlobalConfig   `yaml:"global"`
+	ScrapeConfigs            []ScrapeConfig `yaml:"scrape_configs,omitempty"`
+	targetCount              int
+	targetName               string
+	percentOfUpdatingTargets int
+	stConfigs                []StaticConfig
 }
 
 // GlobalConfig represents essential parts for `global` section of Prometheus config.
@@ -58,10 +60,11 @@ func WithGlobalConfig(scrapeInterval time.Duration) ConfigOptions {
 	}
 }
 
-func WithScrapeConfig(targetCount int, targetName string) ConfigOptions {
+func WithScrapeConfig(targetCount, percentOfUpdatingTargets int, targetName string) ConfigOptions {
 	return func(config *Config) {
 		config.targetCount = targetCount
 		config.targetName = targetName
+		config.percentOfUpdatingTargets = percentOfUpdatingTargets
 		config.update()
 	}
 }
@@ -75,17 +78,32 @@ func (cfg *Config) update() {
 			Labels:  nil,
 		},
 	}
-	var stConfigs []StaticConfig
-	for i := 0; i < cfg.targetCount; i++ {
-		stConfigs = append(stConfigs, StaticConfig{
-			Targets: []string{cfg.targetName},
-			Labels: map[string]string{
-				"host_number": fmt.Sprintf("cfg_%d", i),
-				"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
-			},
-		})
+	if len(cfg.stConfigs) == cfg.targetCount {
+		num := cfg.targetCount / cfg.percentOfUpdatingTargets
+		if num < 0 {
+			num = 1
+		}
+		for i := 0; i < num; i++ {
+			cfg.stConfigs[i] = StaticConfig{
+				Targets: []string{cfg.targetName},
+				Labels: map[string]string{
+					"host_number": cfg.stConfigs[i].Labels["host_number"],
+					"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
+				},
+			}
+		}
+	} else {
+		for i := 0; i < cfg.targetCount; i++ {
+			cfg.stConfigs = append(cfg.stConfigs, StaticConfig{
+				Targets: []string{cfg.targetName},
+				Labels: map[string]string{
+					"host_number": fmt.Sprintf("cfg_%d", i),
+					"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
+				},
+			})
+		}
 	}
-	configs["node_exporter"] = stConfigs
+	configs["node_exporter"] = cfg.stConfigs
 	for jobName, scrapeCfgs := range configs {
 		scrapeConfigs = append(scrapeConfigs, ScrapeConfig{
 			JobName:       jobName,
