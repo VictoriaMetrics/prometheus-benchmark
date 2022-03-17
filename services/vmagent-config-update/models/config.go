@@ -23,6 +23,8 @@ func NewConfig(options ...ConfigOptions) *Config {
 type Config struct {
 	Global        GlobalConfig   `yaml:"global"`
 	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs,omitempty"`
+	targetCount   int
+	targetName    string
 }
 
 // GlobalConfig represents essential parts for `global` section of Prometheus config.
@@ -56,35 +58,41 @@ func WithGlobalConfig(scrapeInterval time.Duration) ConfigOptions {
 	}
 }
 
-func WithScrapeConfig(targetCount int, targetName, vmagentAddr string) ConfigOptions {
+func WithScrapeConfig(targetCount int, targetName string) ConfigOptions {
 	return func(config *Config) {
-		var scrapeConfigs []ScrapeConfig
-		configs := make(map[string][]StaticConfig)
-		configs["vmalert"] = []StaticConfig{
-			{
-				Targets: []string{vmagentAddr},
-				Labels:  nil,
-			},
-		}
-		var stConfigs []StaticConfig
-		for i := 0; i < targetCount; i++ {
-			stConfigs = append(stConfigs, StaticConfig{
-				Targets: []string{targetName},
-				Labels: map[string]string{
-					"host_number": fmt.Sprintf("cfg_%d", i),
-					"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
-				},
-			})
-		}
-		configs["node_exporter"] = stConfigs
-		for jobName, scrapeCfgs := range configs {
-			scrapeConfigs = append(scrapeConfigs, ScrapeConfig{
-				JobName:       jobName,
-				StaticConfigs: scrapeCfgs,
-			})
-		}
-		config.ScrapeConfigs = scrapeConfigs
+		config.targetCount = targetCount
+		config.targetName = targetName
+		config.update()
 	}
+}
+
+func (cfg *Config) update() {
+	var scrapeConfigs []ScrapeConfig
+	configs := make(map[string][]StaticConfig)
+	configs["vmalert"] = []StaticConfig{
+		{
+			Targets: []string{"localhost:8429"},
+			Labels:  nil,
+		},
+	}
+	var stConfigs []StaticConfig
+	for i := 0; i < cfg.targetCount; i++ {
+		stConfigs = append(stConfigs, StaticConfig{
+			Targets: []string{cfg.targetName},
+			Labels: map[string]string{
+				"host_number": fmt.Sprintf("cfg_%d", i),
+				"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
+			},
+		})
+	}
+	configs["node_exporter"] = stConfigs
+	for jobName, scrapeCfgs := range configs {
+		scrapeConfigs = append(scrapeConfigs, ScrapeConfig{
+			JobName:       jobName,
+			StaticConfigs: scrapeCfgs,
+		})
+	}
+	cfg.ScrapeConfigs = scrapeConfigs
 }
 
 func (cfg *Config) marshal() []byte {

@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	listenAddr           = flag.String("http.listenAddr", ":8436", "http service listener addr")
-	configUpdateInterval = flag.Duration("configUpdateInterval", time.Minute*1, "interval when config will be updated")
-	targetsCount         = flag.Int("targetsCount", 1000, "targetsCount defines how many copies of nodeexporter to add as scrape targets. affects metrics volume and cardinality")
-	targetName           = flag.String("targetName", "vm-benchmark-exporter.default.svc:9102", "target name with host and port name")
-	scrapInterval        = flag.Duration("scrapInterval", time.Second*5, "defines how frequently scrape targets")
-	vmagentListenAddr    = flag.String("http.vmagentListenAddr", "localhost:8429", "http vmagent service listen addr")
+	listenAddr               = flag.String("http.listenAddr", ":8436", "http service listener addr")
+	configUpdateInterval     = flag.Duration("configUpdateInterval", time.Second*10, "interval when config will be updated")
+	percentOfUpdatingTargets = flag.Int("percentOfUpdatingTargets", 10, "percent of updating targets")
+	targetsCount             = flag.Int("targetsCount", 100, "targetsCount defines how many copies of nodeexporter to add as scrape targets. affects metrics volume and cardinality")
+	targetName               = flag.String("targetName", "vm-benchmark-exporter.default.svc:9102", "target name with host and port name")
+	scrapInterval            = flag.Duration("scrapInterval", time.Second*5, "defines how frequently scrape targets")
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 
 	c := models.InitConfigManager(models.NewConfig(
 		models.WithGlobalConfig(*scrapInterval),
-		models.WithScrapeConfig(*targetsCount, *targetName, *vmagentListenAddr)))
+		models.WithScrapeConfig(*targetsCount, *targetName)))
 
 	r := runner.New(func(ctx context.Context) error {
 		return c.Update()
@@ -42,7 +42,7 @@ func main() {
 		logger.Fatalf("failed to run vmagent config updater: %s", err)
 	}
 
-	go httpserver.Serve(*listenAddr, controllers.Init(ctx, *vmagentListenAddr, *configUpdateInterval))
+	go httpserver.Serve(*listenAddr, controllers.Init(ctx, *configUpdateInterval))
 
 	logger.Infof("listening on: %v", *listenAddr)
 	procutil.WaitForSigterm()

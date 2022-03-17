@@ -22,6 +22,7 @@ func InitConfigManager(config *Config) *ConfigManager {
 }
 
 func (c *ConfigManager) Update() error {
+	c.config.update()
 	configValue.Store(c.config.marshal())
 	return nil
 }
