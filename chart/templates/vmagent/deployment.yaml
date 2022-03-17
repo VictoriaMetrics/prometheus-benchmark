@@ -38,17 +38,10 @@ spec:
               containerPort: {{ .Values.vmagent.port }}
           resources:
 {{ toYaml .Values.vmagent.resources | indent 12 }}
-          volumeMounts:
-            - name: config
-              mountPath: /config
       {{- if .Values.vmagent.tolerations }}
       tolerations:
 {{ toYaml .Values.vmagent.tolerations | indent 8 }}
       {{- end }}
-      volumes:
-        - name: config
-          configMap:
-            name: { { include "vm-benchmark.fullname" . } }-vmagent-cm
       {{- if .Values.vmagent.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.vmagent.nodeSelector | indent 8 }}
