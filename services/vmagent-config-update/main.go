@@ -42,7 +42,7 @@ func main() {
 		logger.Fatalf("failed to run vmagent config updater: %s", err)
 	}
 
-	go httpserver.Serve(*listenAddr, controllers.Init(ctx, *vmagentListenAddr))
+	go httpserver.Serve(*listenAddr, controllers.Init(ctx, *vmagentListenAddr, *configUpdateInterval))
 
 	logger.Infof("listening on: %v", *listenAddr)
 	procutil.WaitForSigterm()
