@@ -79,11 +79,11 @@ func (cfg *Config) update() {
 		},
 	}
 	if len(cfg.stConfigs) == cfg.targetCount {
-		num := cfg.targetCount / cfg.percentOfUpdatingTargets
+		num := float64(cfg.targetCount) * (float64(cfg.percentOfUpdatingTargets) / 100)
 		if num < 0 {
 			num = 1
 		}
-		for i := 0; i < num; i++ {
+		for i := 0; i < int(num); i++ {
 			cfg.stConfigs[i] = StaticConfig{
 				Targets: []string{cfg.targetName},
 				Labels: map[string]string{
