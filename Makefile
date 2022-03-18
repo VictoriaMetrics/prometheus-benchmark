@@ -1,4 +1,4 @@
-include services/vmagent-config-update/Makefile
+include services/vmagent-config-updater/Makefile
 
 RELEASE_NAME := vm-benchmark
 NAMESPACE := default # k8s namespace for installing the chart
