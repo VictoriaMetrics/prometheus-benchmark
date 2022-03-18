@@ -18,16 +18,42 @@ spec:
     spec:
       containers:
         - name: vmagent-config-updater
-          image: "{{ .Values.vmagent_config_update.image.repository }}:{{ .Values.vmagent_config_update.image.tag }}"
-          imagePullPolicy: "{{ .Values.vmagent_config_update.image.pullPolicy }}"
-
+          image: "{{ .Values.vmagentConfigUpdater.image.repository }}:{{ .Values.vmagentConfigUpdater.image.tag }}"
+          imagePullPolicy: "{{ .Values.vmagentConfigUpdater.image.pullPolicy }}"
+          args:
+            {{- if .Values.vmagentConfigUpdater.listenAddr }}
+            - --http.listenAddr={{ .Values.vmagentConfigUpdater.listenAddr }}
+            {{- end }}
+            {{- if .Values.vmagentConfigUpdater.configUpdateInterval }}
+            - --config.configUpdateInterval={{ .Values.vmagentConfigUpdater.configUpdateInterval }}
+            {{- end }}
+            {{- if .Values.vmagentConfigUpdater.targetsToUpdatePercentage }}
+            - --config.targetsToUpdatePercentage={{ .Values.vmagentConfigUpdater.targetsToUpdatePercentage }}
+            {{- end }}
+            {{- if .Values.vmagentConfigUpdater.targetsCount }}
+            - --config.targetsCount={{ .Values.vmagentConfigUpdater.targetsCount }}
+            {{- end }}
+            {{- if .Values.vmagentConfigUpdater.targetAddr }}
+            - --config.targetAddr={{ .Values.vmagentConfigUpdater.targetAddr }}
+            {{- end }}
+            {{- if .Values.vmagentConfigUpdater.scrapeInterval }}
+            - --config.scrapeInterval={{ .Values.vmagentConfigUpdater.scrapeInterval }}
+            {{- end }}
+            {{- if .Values.vmagentConfigUpdater.jobName }}
+            - --config.jobName={{ .Values.vmagentConfigUpdater.jobName }}
+            {{- end }}
+          ports:
+            - name: config-updater
+              containerPort: {{ .Values.vmagent.port }}
         - name: vmagent
           image: "{{ .Values.vmagent.image.repository }}:{{ .Values.vmagent.image.tag }}"
           imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
           args:
             - --httpListenAddr=:{{ .Values.vmagent.port }}
-            - --promscrape.config=http://localhost:8436/api/v1/config
-            - --promscrape.configCheckInterval=10s
+            - --promscrape.config={{ .Values.vmagent.config }}
+            {{- if .Values.vmagent.configCheckInterval }}
+            - --promscrape.configCheckInterval={{ .Values.vmagent.configCheckInterval }}
+            {{- end }}
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}
             {{- if .token }}

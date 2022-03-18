@@ -1,8 +1,39 @@
-vmagent_config_update:
+## List of configuration settings
+## for vmagent-config-updater deployment
+vmagentConfigUpdater:
   image:
-    repository: dmitrykmoon/vmagent-config-update
+    repository: dmitrykmoon/vmagent-config-updater
     pullPolicy: IfNotPresent
-    tag: "heads-churn_rate_bench-0-g8a7984f"
+    tag: "heads-churn_rate_bench-0-gdfb49f2"
+
+  ## address with port for listening for HTTP requests
+  listenAddr: ""
+
+  ## How frequent to refresh the configuration.
+  ## See also 'config.targetsToUpdatePercentage'
+  configUpdateInterval: ""
+
+  ## Percentage of the targets which would be updated
+  ## with unique label on the next configuration update.
+  ## Non-zero value will result in constant Churn Rate
+  targetsToUpdatePercentage: "10"
+
+  ## Defines how many scrape targets to generate in scrape config.
+  ## Each target will have the same address defined by 'config.targetAddr'
+  ## but each with unique label.
+  targetsCount: "100"
+
+  ## Address with port to use as target address in scrape config
+  targetAddr: ""
+
+  ## Defines how frequently to scrape targets
+  scrapeInterval: ""
+
+  ## Defines job name to scrape targets
+  jobName: ""
+
+  port: 8436
+
 
 ## List of configuration settings
 ## for vmagent deployment
@@ -11,6 +42,14 @@ vmagent:
     repository: victoriametrics/vmagent
     pullPolicy: IfNotPresent
     tag: "v1.72.0"
+  ## defines which config to use
+  ## if you want to use config from configmap.yml
+  ## just change this param to
+  ## /config/scrape.yml
+  config: http://localhost:8436/api/v1/config
+
+  ## Defines how frequently check config
+  configCheckInterval: 10s
 
   ## targetsCount defines how many copies of nodeexporter
   ## to add as scrape targets.
