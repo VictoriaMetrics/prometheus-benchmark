@@ -14,7 +14,7 @@ import (
 const (
 	defaultJobName                   = "node_exporter"
 	defaultTargetAddr                = "vm-benchmark-exporter.default.svc:9102"
-	defaultTargetCount               = 100
+	defaultTargetCount               = 1000
 	defaultTargetsToUpdatePercentage = 10
 )
 

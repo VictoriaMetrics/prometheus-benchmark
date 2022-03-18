@@ -23,8 +23,8 @@ const (
 var (
 	listenAddr                = flag.String("http.listenAddr", ":8436", "address with port for listening for HTTP requests")
 	configUpdateInterval      = flag.Duration("config.updateInterval", time.Second*10, "How frequent to refresh the configuration. See also 'config.targetsToUpdatePercentage'")
-	targetsToUpdatePercentage = flag.Int("config.targetsToUpdatePercentage", 0, "Percentage of the targets which would be updated with unique label on the next configuration update. Non-zero value will result in constant Churn Rate")
-	targetsCount              = flag.Int("config.targetsCount", 10, "Defines how many scrape targets to generate in scrape config. Each target will have the same address defined by 'config.targetAddr' but each with unique label.")
+	targetsToUpdatePercentage = flag.Int("config.targetsToUpdatePercentage", 10, "Percentage of the targets which would be updated with unique label on the next configuration update. Non-zero value will result in constant Churn Rate")
+	targetsCount              = flag.Int("config.targetsCount", 1000, "Defines how many scrape targets to generate in scrape config. Each target will have the same address defined by 'config.targetAddr' but each with unique label.")
 	targetAddr                = flag.String("config.targetAddr", "vm-benchmark-exporter.default.svc:9102", "Address with port to use as target address in scrape config")
 	scrapeInterval            = flag.Duration("config.scrapeInterval", time.Second*5, "Defines how frequently to scrape targets")
 	jobName                   = flag.String("config.jobName", "node_exporter", "Defines job name to scrape targets")
