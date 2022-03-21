@@ -4,7 +4,7 @@ vmagentConfigUpdater:
   image:
     repository: dmitrykmoon/vmagent-config-updater
     pullPolicy: IfNotPresent
-    tag: "heads-churn_rate_bench-0-g3bf9744"
+    tag: "heads-churn_rate_bench-0-g4f3d9a3"
 
   ## address with port for listening for HTTP requests
   listenAddr: ""
