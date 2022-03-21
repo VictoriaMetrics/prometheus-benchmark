@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: vmagent-config-updater
-          image: "dmitrykmoon/vmagent-config-updater:heads-churn_rate_bench-0-g4f3d9a3"
+          image: "dmitrykmoon/vmagent-config-updater:heads-churn_rate_bench-0-g44745d3"
           imagePullPolicy: "IfNotPresent"
           args:
             {{- if .Values.vmagent.dynamicConfig.updateInterval }}
