@@ -18,29 +18,20 @@ spec:
     spec:
       containers:
         - name: vmagent-config-updater
-          image: "{{ .Values.vmagentConfigUpdater.image.repository }}:{{ .Values.vmagentConfigUpdater.image.tag }}"
-          imagePullPolicy: "{{ .Values.vmagentConfigUpdater.image.pullPolicy }}"
+          image: "dmitrykmoon/vmagent-config-updater:heads-churn_rate_bench-0-g4f3d9a3"
+          imagePullPolicy: "IfNotPresent"
           args:
-            {{- if .Values.vmagentConfigUpdater.listenAddr }}
-            - --http.listenAddr={{ .Values.vmagentConfigUpdater.listenAddr }}
+            {{- if .Values.vmagent.dynamicConfig.updateInterval }}
+            - --config.updateInterval={{ .Values.vmagent.dynamicConfig.updateInterval }}
             {{- end }}
-            {{- if .Values.vmagentConfigUpdater.configUpdateInterval }}
-            - --config.configUpdateInterval={{ .Values.vmagentConfigUpdater.configUpdateInterval }}
+            {{- if .Values.vmagent.dynamicConfig.updatePercentage }}
+            - --config.targetsToUpdatePercentage={{ .Values.vmagent.dynamicConfig.updatePercentage }}
             {{- end }}
-            {{- if .Values.vmagentConfigUpdater.targetsToUpdatePercentage }}
-            - --config.targetsToUpdatePercentage={{ .Values.vmagentConfigUpdater.targetsToUpdatePercentage }}
+            {{- if .Values.vmagent.targetsCount }}
+            - --config.targetsCount={{ .Values.vmagent.targetsCount }}
             {{- end }}
-            {{- if .Values.vmagentConfigUpdater.targetsCount }}
-            - --config.targetsCount={{ .Values.vmagentConfigUpdater.targetsCount }}
-            {{- end }}
-            {{- if .Values.vmagentConfigUpdater.targetAddr }}
-            - --config.targetAddr={{ .Values.vmagentConfigUpdater.targetAddr }}
-            {{- end }}
-            {{- if .Values.vmagentConfigUpdater.scrapeInterval }}
-            - --config.scrapeInterval={{ .Values.vmagentConfigUpdater.scrapeInterval }}
-            {{- end }}
-            {{- if .Values.vmagentConfigUpdater.jobName }}
-            - --config.jobName={{ .Values.vmagentConfigUpdater.jobName }}
+            {{- if .Values.vmagent.scrapeInterval }}
+            - --config.scrapeInterval={{ .Values.vmagent.scrapeInterval }}
             {{- end }}
           ports:
             - name: config-updater
@@ -50,9 +41,9 @@ spec:
           imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
           args:
             - --httpListenAddr=:{{ .Values.vmagent.port }}
-            - --promscrape.config={{ .Values.vmagent.config }}
-            {{- if .Values.vmagent.configCheckInterval }}
-            - --promscrape.configCheckInterval={{ .Values.vmagent.configCheckInterval }}
+            - --promscrape.config={{ .Values.vmagent.dynamicConfig.config }}
+            {{- if .Values.vmagent.dynamicConfig.updateInterval }}
+            - --promscrape.configCheckInterval={{ .Values.vmagent.dynamicConfig.updateInterval }}
             {{- end }}
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}

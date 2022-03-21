@@ -38,7 +38,7 @@ type Config struct {
 	targetAddr                string
 	targetsToUpdatePercentage int
 	jobName                   string
-	stConfigs                 []StaticConfig
+	stConfigs                 []*StaticConfig
 }
 
 // GlobalConfig represents essential parts for `global` section of Prometheus config.
@@ -52,10 +52,10 @@ type GlobalConfig struct {
 //
 // See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config
 type ScrapeConfig struct {
-	JobName        string         `yaml:"job_name"`
-	ScrapeInterval time.Duration  `yaml:"scrape_interval,omitempty"`
-	ScrapeTimeout  time.Duration  `yaml:"scrape_timeout,omitempty"`
-	StaticConfigs  []StaticConfig `yaml:"static_configs,omitempty"`
+	JobName        string          `yaml:"job_name"`
+	ScrapeInterval time.Duration   `yaml:"scrape_interval,omitempty"`
+	ScrapeTimeout  time.Duration   `yaml:"scrape_timeout,omitempty"`
+	StaticConfigs  []*StaticConfig `yaml:"static_configs,omitempty"`
 }
 
 // StaticConfig represents essential parts for `static_config` section of Prometheus config.
@@ -117,7 +117,7 @@ func WithJobName(jobName string) ConfigOptions {
 
 func (cfg *Config) prepareStaticConfig() {
 	for i := 0; i < cfg.targetCount; i++ {
-		cfg.stConfigs = append(cfg.stConfigs, StaticConfig{
+		cfg.stConfigs = append(cfg.stConfigs, &StaticConfig{
 			Targets: []string{cfg.targetAddr},
 			Labels: map[string]string{
 				"host_number": fmt.Sprintf("cfg_%d", i),
@@ -131,13 +131,7 @@ func (cfg *Config) update() {
 	num := float64(cfg.targetCount) * (float64(cfg.targetsToUpdatePercentage) / 100)
 	for i := 0; i < int(num); i++ {
 		j := rand.Intn(len(cfg.stConfigs) - 1)
-		cfg.stConfigs[j] = StaticConfig{
-			Targets: []string{cfg.targetAddr},
-			Labels: map[string]string{
-				"host_number": cfg.stConfigs[j].Labels["host_number"],
-				"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
-			},
-		}
+		cfg.stConfigs[j].Labels["instance"] = strconv.FormatInt(time.Now().UnixNano(), 10)
 	}
 
 	var scrapeConfigs []ScrapeConfig

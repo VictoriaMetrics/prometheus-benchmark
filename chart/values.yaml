@@ -9,12 +9,18 @@ vmagent:
   ## targetsCount defines how many copies of nodeexporter
   ## to add as scrape targets.
   ## affects metrics volume and cardinality
-  targetsCount: 1000
+  targetsCount: 100
 
   ## defines how frequently scrape targets
   scrapeInterval: 5s
 
   dynamicConfig:
+    ## defines which config to use
+    ## if you want to use config from configmap.yml
+    ## just change this param to
+    ## /config/scrape.yml
+    config: http://127.0.0.1:8436/api/v1/config
+
     ## How frequent to refresh the configuration.
     ## See also 'config.targetsToUpdatePercentage'
     updateInterval: 10s
@@ -29,7 +35,7 @@ vmagent:
   remoteWrite:
       ## single-node: http://<victoriametrics-addr>:8428/api/v1/write
       ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
-    - url: ""
+    - url: "http://192.168.11.102:8428/api/v1/write"
       ## auth token for VictoriaMetrics.
       ## leave empty if no token configured
       token: ""
@@ -101,14 +107,14 @@ vmalert:
     - datasource:
         ## single-node: http://<victoriametrics-addr>:8428
         ## cluster: http://<vminsert-addr>:8481/select/0/prometheus
-        url: ""
+        url: "http://192.168.11.102:8428/"
         ## auth token for VictoriaMetrics.
         ## leave empty if no token configured
         token: ""
       remoteWrite:
         ## single-node: http://<victoriametrics-addr>:8428/
         ## cluster: http://<vminsert-addr>:8480/insert/0/prometheus/
-        url: ""
+        url: "http://192.168.11.102:8428/"
         ## auth token for VictoriaMetrics.
         ## leave empty if no token configured
         token: ""
