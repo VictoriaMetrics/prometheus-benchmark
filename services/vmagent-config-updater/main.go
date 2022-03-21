@@ -27,7 +27,7 @@ var (
 	targetsCount              = flag.Int("config.targetsCount", 1000, "Defines how many scrape targets to generate in scrape config. Each target will have the same address defined by 'config.targetAddr' but each with unique label.")
 	targetAddr                = flag.String("config.targetAddr", "vm-benchmark-exporter.default.svc:9102", "Address with port to use as target address in scrape config")
 	scrapeInterval            = flag.Duration("config.scrapeInterval", time.Second*5, "Defines how frequently to scrape targets")
-	jobName                   = flag.String("config.jobName", "node_exporter", "Defines job name to scrape targets")
+	jobName                   = flag.String("config.jobName", "node_exporter", "Defines the job name for scrape targets")
 )
 
 func main() {
@@ -66,16 +66,19 @@ func main() {
 }
 
 func requestHandler(w http.ResponseWriter, r *http.Request) bool {
-	if r.Method == http.MethodGet && r.URL.Path == configPath {
-		if _, err := w.Write(models.GetConfig()); err != nil {
-			return false
-		}
-		w.Header().Set("Content-Type", "plain/text")
-		w.WriteHeader(http.StatusOK)
-		logger.Infof("Sent config to vmagent")
-		return true
+	if r.Method != http.MethodGet {
+		return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("unsupported HTTP method %q", r.Method))
 	}
-	return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("got unsupported HTTP method or path: %s: %s", r.Method, r.URL.Path))
+	if r.URL.Path != configPath {
+		return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("unsupported path %q", r.URL.Path))
+	}
+	if _, err := w.Write(models.GetConfig()); err != nil {
+		logger.Errorf("failed to write response: %s", err)
+		return false
+	}
+	w.Header().Set("Content-Type", "plain/text")
+	w.WriteHeader(http.StatusOK)
+	return true
 }
 
 func respondWithError(w http.ResponseWriter, r *http.Request, statusCode int, err error) bool {

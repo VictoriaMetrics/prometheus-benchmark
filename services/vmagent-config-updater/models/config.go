@@ -128,16 +128,16 @@ func (cfg *Config) prepareStaticConfig() {
 }
 
 func (cfg *Config) update() {
-	if len(cfg.stConfigs) == cfg.targetCount {
-		num := float64(cfg.targetCount) * (float64(cfg.targetsToUpdatePercentage) / 100)
-		for i := 0; i < int(num); i++ {
-			cfg.stConfigs[i] = StaticConfig{
-				Targets: []string{cfg.targetAddr},
-				Labels: map[string]string{
-					"host_number": cfg.stConfigs[i].Labels["host_number"],
-					"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
-				},
-			}
+	num := float64(cfg.targetCount) * (float64(cfg.targetsToUpdatePercentage) / 100)
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < int(num); i++ {
+		j := rand.Intn(len(cfg.stConfigs))
+		cfg.stConfigs[j] = StaticConfig{
+			Targets: []string{cfg.targetAddr},
+			Labels: map[string]string{
+				"host_number": cfg.stConfigs[j].Labels["host_number"],
+				"instance":    strconv.FormatInt(time.Now().UnixNano(), 10),
+			},
 		}
 	}
 
@@ -156,11 +156,4 @@ func (cfg *Config) marshal() []byte {
 		logger.Panicf("BUG: cannot marshal Config: %s", err)
 	}
 	return data
-}
-
-func (cfg *Config) shuffle() {
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(cfg.stConfigs), func(i, j int) {
-		cfg.stConfigs[i], cfg.stConfigs[j] = cfg.stConfigs[j], cfg.stConfigs[i]
-	})
 }
