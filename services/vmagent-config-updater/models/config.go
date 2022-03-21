@@ -129,9 +129,8 @@ func (cfg *Config) prepareStaticConfig() {
 
 func (cfg *Config) update() {
 	num := float64(cfg.targetCount) * (float64(cfg.targetsToUpdatePercentage) / 100)
-	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < int(num); i++ {
-		j := rand.Intn(len(cfg.stConfigs))
+		j := rand.Intn(len(cfg.stConfigs) - 1)
 		cfg.stConfigs[j] = StaticConfig{
 			Targets: []string{cfg.targetAddr},
 			Labels: map[string]string{

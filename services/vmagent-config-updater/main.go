@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -34,6 +35,8 @@ func main() {
 	envflag.Parse()
 	logger.Init()
 	logger.Infof("starting config updater service")
+
+	rand.Seed(time.Now().UnixNano())
 
 	c := models.InitConfigManager(models.NewConfig(
 		models.WithTargetCount(*targetsCount),
@@ -72,12 +75,11 @@ func requestHandler(w http.ResponseWriter, r *http.Request) bool {
 	if r.URL.Path != configPath {
 		return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("unsupported path %q", r.URL.Path))
 	}
+	w.Header().Set("Content-Type", "plain/text")
 	if _, err := w.Write(models.GetConfig()); err != nil {
 		logger.Errorf("failed to write response: %s", err)
 		return false
 	}
-	w.Header().Set("Content-Type", "plain/text")
-	w.WriteHeader(http.StatusOK)
 	return true
 }
 
