@@ -9,7 +9,7 @@ vmagent:
   ## targetsCount defines how many copies of nodeexporter
   ## to add as scrape targets.
   ## affects metrics volume and cardinality
-  targetsCount: 100
+  targetsCount: 1000
 
   ## defines how frequently scrape targets
   scrapeInterval: 5s
