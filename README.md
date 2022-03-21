@@ -9,7 +9,8 @@ our cloud solution, compare performance and compression between releases.
 The helm chart deploys three pods:
 * nodeexporter + nginx (2 containers in one pod), where nodeexporter used as a metrics source
 and nginx as cache-server to reduce pressure on nodeexporter;
-* vmagent + vmagent-config-updater (2 containers in one pod) to scrape nodeexporter metrics and forward via remote-write to configured destinations;
+* vmagent + vmagent-config-updater (2 containers in one pod) to scrape nodeexporter metrics and forward via remote-write 
+to configured destinations;
 * vmalert + alertmanager (2 containers in one pod), where vmalert executes
 [alerting rules](files/alerts.yaml) and sends notifications to alertmanager. Alertmanager is configured
 to blackhole received notifications. vmalert + alertmanager pod is optional and used for generating the
@@ -37,6 +38,8 @@ Please note `resources` section [values.yaml](values.yaml) and adjust it accordi
 configured workload. The most of resources are supposed to be consumed by vmagent
 and nginx+nodeexporter pods.
 
+
+
 ## Monitoring
 
 vmagent is configured to scrape and send its own metrics
@@ -52,13 +55,5 @@ or updating [configmap.yaml](templates/vmagent/configmap.yaml) with correspondin
 targets. Use grafana dashboards for [single](https://grafana.com/grafana/dashboards/10229)
 or [cluster](https://grafana.com/grafana/dashboards/11176) versions of VictoriaMetrics.
 
-```vmagent-config-updater``` is a service which automatically generates config for vmagent and 
-helps to check churn rate benchmark.
-How it works:
-1. Service opens port `:8436` and listen http requests;
-2. Every time interval which you can define in [values.yaml](values.yaml) it updates label for some % of targets;
-3. vmagent asks new config via `api/v1/config`, for example, every 10 seconds and updates it;
-How vmagent updates config you can check in the documentation 
-[vmakert config update](https://docs.victoriametrics.com/vmagent.html#configuration-update)
 
 All configurations and description of flags you can define in [values.yaml](values.yaml) 
