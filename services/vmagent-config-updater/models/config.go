@@ -129,11 +129,12 @@ func (cfg *Config) prepareStaticConfig() {
 
 func (cfg *Config) update() {
 	num := float64(cfg.targetCount) * (float64(cfg.targetsToUpdatePercentage) / 100)
+	rand.Shuffle(len(cfg.stConfigs), func(i, j int) {
+		cfg.stConfigs[i], cfg.stConfigs[j] = cfg.stConfigs[j], cfg.stConfigs[i]
+	})
 	for i := 0; i < int(num); i++ {
-		j := rand.Intn(len(cfg.stConfigs) - 1)
-		cfg.stConfigs[j].Labels["instance"] = strconv.FormatInt(time.Now().UnixNano(), 10)
+		cfg.stConfigs[i].Labels["instance"] = strconv.FormatInt(time.Now().UnixNano(), 10)
 	}
-
 	var scrapeConfigs []ScrapeConfig
 	scrapeConfigs = append(scrapeConfigs, ScrapeConfig{
 		JobName:       cfg.jobName,
