@@ -12,11 +12,11 @@ and nginx as cache-server to reduce pressure on nodeexporter;
 * vmagent + vmagent-config-updater (2 containers in one pod) to scrape nodeexporter metrics and forward via remote-write 
 to configured destinations;
 * vmalert + alertmanager (2 containers in one pod), where vmalert executes
-[alerting rules](files/alerts.yaml) and sends notifications to alertmanager. Alertmanager is configured
+[alerting rules](chart/files/alerts.yaml) and sends notifications to alertmanager. Alertmanager is configured
 to blackhole received notifications. vmalert + alertmanager pod is optional and used for generating the
 read load. To disable pod creation set `.Values.vmalert.enabled=false`.
 
-Please, check [values.yaml](values.yaml) for configuration params.
+Please, check [values.yaml](chart/values.yaml) for configuration params.
 
 ## Articles
 
@@ -34,10 +34,9 @@ make install # to install the chart
 make delete # to delete the chart
 ```
 
-Please note `resources` section [values.yaml](values.yaml) and adjust it accordingly to
+Please note `resources` section [values.yaml](chart/values.yaml) and adjust it accordingly to
 configured workload. The most of resources are supposed to be consumed by vmagent
 and nginx+nodeexporter pods.
-
 
 
 ## Monitoring
@@ -51,9 +50,9 @@ to monitor vmagent's state.
 vmagent is not aware of `url.remoteWrite` VictoriaMetrics configuration
 or its components, so it can't scrape their metrics. Please, configure
 monitoring of `remoteWrite` destination manually by setting up an external monitoring
-or updating [configmap.yaml](templates/vmagent/configmap.yaml) with corresponding
+or updating [configmap.yaml](chart/templates/vmagent/configmap.yaml) with corresponding
 targets. Use grafana dashboards for [single](https://grafana.com/grafana/dashboards/10229)
 or [cluster](https://grafana.com/grafana/dashboards/11176) versions of VictoriaMetrics.
 
 
-All configurations and description of flags you can define in [values.yaml](values.yaml) 
+All configurations and description of flags you can define in [values.yaml](chart/values.yaml) 

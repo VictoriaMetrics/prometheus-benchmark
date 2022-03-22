@@ -1,10 +1,14 @@
+# Config updater
 
+Config updater is a service for dynamic config generation
+via http URL and can be used by vmagent. 
 
-```vmagent-config-updater``` is a service which dynamically generates config for vmagent
-and is available via HTTP.
 How it works:
-1. By default, service listens for http requests at ``;
-2. Every time interval which you can define in [values.yaml](values.yaml) it updates label for some % of targets;
-3. vmagent asks new config via `api/v1/config`, for example, every 10 seconds and updates it;
-   How vmagent updates config you can check in the documentation
-   [vmakert config update](https://docs.victoriametrics.com/vmagent.html#configuration-update)
+1. By default, service listens for http requests at `-http.listenAddr` (by default `:8436`);
+2. It generates scrape configuration of `-config.targetsCount` targets
+with `-config.targetAddr` address;
+3. Generated config is available via HTTP on `/api/v1/config` path;
+4. Every `-config.updateInterval` it changes a label value
+for `-config.targetsToUpdatePercentage` of targets.
+
+See full list of configuration flags by passing `-help` flag to the binary.

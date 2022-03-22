@@ -33,6 +33,7 @@ spec:
             {{- if .Values.vmagent.scrapeInterval }}
             - --config.scrapeInterval={{ .Values.vmagent.scrapeInterval }}
             {{- end }}
+            - --config.targetAddr={{ include "vm-benchmark.nginxCached" .  }}
           ports:
             - name: config-updater
               containerPort: {{ .Values.vmagent.port }}
@@ -41,9 +42,11 @@ spec:
           imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
           args:
             - --httpListenAddr=:{{ .Values.vmagent.port }}
-            - --promscrape.config={{ .Values.vmagent.dynamicConfig.config }}
-            {{- if .Values.vmagent.dynamicConfig.updateInterval }}
+            {{- if and .Values.vmagent.dynamicConfig.updateInterval  .Values.vmagent.dynamicConfig.updatePercentage  }}
+            - --promscrape.config=http://0.0.0.0:8436/api/v1/config
             - --promscrape.configCheckInterval={{ .Values.vmagent.dynamicConfig.updateInterval }}
+            {{- else }}
+            - --promscrape.config=/config/scrape.yml
             {{- end }}
             {{- range .Values.vmagent.remoteWrite }}
             - --remoteWrite.url={{ .url }}

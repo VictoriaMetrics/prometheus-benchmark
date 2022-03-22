@@ -14,21 +14,20 @@ vmagent:
   ## defines how frequently scrape targets
   scrapeInterval: 5s
 
+  ## dynamicConfig allows configuring scrape config
+  ## dynamic updates. This setting may be useful for
+  ## emulating workload with metrics Churn Rate.
+  ## If empty, static scrape config from
+  ## /templates/vmagent/configmap.yaml will be used.
   dynamicConfig:
-    ## defines which config to use
-    ## if you want to use config from configmap.yml
-    ## just change this param to
-    ## /config/scrape.yml
-    config: http://127.0.0.1:8436/api/v1/config
-
-    ## How frequent to refresh the configuration.
-    ## See also 'config.targetsToUpdatePercentage'
-    updateInterval: 10s
-
     ## Percentage of the targets which would be updated
     ## with unique label on the next configuration update.
     ## Non-zero value will result in constant Churn Rate
     updatePercentage: 10
+
+    ## How frequent to update the configuration.
+    updateInterval: 5m
+
 
   ## remote-write configurations for vmagent
   ## vmagent will replicate data to all configured URLs
