@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vm-benchmark.fullname" . }}-vmagent
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "vm-benchmark.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+  {{- include "vm-benchmark.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/vmagent/configmap.yaml") . | sha256sum }}
+      labels:
+    {{- include "vm-benchmark.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: vmagent-config-updater
+          image: "dmitrykmoon/vmagent-config-updater:heads-churn_rate_bench-0-g44745d3"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            {{- if .Values.vmagent.dynamicConfig.updateInterval }}
+            - --config.updateInterval={{ .Values.vmagent.dynamicConfig.updateInterval }}
+            {{- end }}
+            {{- if .Values.vmagent.dynamicConfig.updatePercentage }}
+            - --config.targetsToUpdatePercentage={{ .Values.vmagent.dynamicConfig.updatePercentage }}
+            {{- end }}
+            {{- if .Values.vmagent.targetsCount }}
+            - --config.targetsCount={{ .Values.vmagent.targetsCount }}
+            {{- end }}
+            {{- if .Values.vmagent.scrapeInterval }}
+            - --config.scrapeInterval={{ .Values.vmagent.scrapeInterval }}
+            {{- end }}
+            - --config.targetAddr={{ include "vm-benchmark.nginxCached" .  }}
+          ports:
+            - name: config-updater
+              containerPort: {{ .Values.vmagent.port }}
+        - name: vmagent
+          image: "{{ .Values.vmagent.image.repository }}:{{ .Values.vmagent.image.tag }}"
+          imagePullPolicy: "{{ .Values.vmagent.image.pullPolicy }}"
+          args:
+            - --httpListenAddr=:{{ .Values.vmagent.port }}
+            {{- if and .Values.vmagent.dynamicConfig.updateInterval  .Values.vmagent.dynamicConfig.updatePercentage  }}
+            - --promscrape.config=http://0.0.0.0:8436/api/v1/config
+            - --promscrape.configCheckInterval={{ .Values.vmagent.dynamicConfig.updateInterval }}
+            {{- else }}
+            - --promscrape.config=/config/scrape.yml
+            {{- end }}
+            {{- range .Values.vmagent.remoteWrite }}
+            - --remoteWrite.url={{ .url }}
+            {{- if .token }}
+            - --remoteWrite.bearerToken={{ .token }}
+            {{- end }}
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.vmagent.port }}
+          resources:
+{{ toYaml .Values.vmagent.resources | indent 12 }}
+      {{- if .Values.vmagent.tolerations }}
+      tolerations:
+{{ toYaml .Values.vmagent.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.vmagent.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.vmagent.nodeSelector | indent 8 }}
+      {{- end }}
