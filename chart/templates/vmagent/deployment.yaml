@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: vmagent-config-updater
-          image: "dmitrykmoon/vmagent-config-updater:heads-churn_rate_bench-0-g44745d3"
+          image: "victoriametrics/vmagent-config-updater:v1.0.0"
           imagePullPolicy: "IfNotPresent"
           args:
             {{- if .Values.vmagent.dynamicConfig.updateInterval }}
