@@ -57,7 +57,7 @@ package-via-docker: package-base
 		docker build \
 			--build-arg src_binary=$(APP_NAME)$(APP_SUFFIX)-prod \
 			--build-arg base_image=$(BASE_IMAGE) \
-			--tag  dmitrykmoon/vmagent-config-updater:$(PKG_TAG) \
+			--tag  victoriametrics/vmagent-config-updater:$(PKG_TAG) \
 			-f services/$(APP_NAME)/Dockerfile bin)
 
 package-via-docker-goarch:
@@ -73,7 +73,7 @@ run-via-docker: package-via-docker
 		--user $(shell id -u):$(shell id -g) \
 		--net host \
 		$(DOCKER_OPTS) \
-		dmitrykmoon/vmagent-config-updater:$(PKG_TAG)
+		victoriametrics/vmagent-config-updater:$(PKG_TAG)
 
 run-vmagent-config-updater:
 	APP_NAME=vmagent-config-updater \
