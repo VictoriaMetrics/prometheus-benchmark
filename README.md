@@ -1,11 +1,11 @@
 # Prometheus benchmark
 
-Prometheus-benchmark Helm chart deploys a simple benchmark setup in Kubernetes
-for measuring data ingestion and querying performance for Prometheus-compatible systems.
-It can run the benchmark simultaneously against multiple systems -
-just add multiple named entries under `remoteStorages` section at [chart/values.yaml](chart/values.yaml).
+Prometheus-benchmark allows testing data ingestion and querying performance
+for Prometheus-compatible systems on production-like workload.
+Multiple systems can be tested simultaneously - just add multiple named entries
+under `remoteStorages` section at [chart/values.yaml](chart/values.yaml).
 
-It scrapes metrics from [node_exporter](https://github.com/prometheus/node_exporter)
+The prometheus-benchmark scrapes metrics from [node_exporter](https://github.com/prometheus/node_exporter)
 and pushes the scraped metrics to the configured Prometheus-compatible remote storage systems.
 These systems must support [Prometheus remote_write API](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write)
 for measuring data ingestion performance. Optionally these systems may support
@@ -101,7 +101,7 @@ The following metrics might be interesting to look at during the benchmark:
 - Data ingestion rate:
 
 ```metricsql
-sum(rate(vm_promscrape_scraped_samples_sum)) by (remote_storage_name)
+sum(rate(vm_promscrape_scraped_samples_sum{job="vmagent"})) by (remote_storage_name)
 ```
 
 - 99th percentile for the duration to execute queries at [chart/files/alerts.yaml](chart/files/alerts.yaml):
@@ -115,7 +115,7 @@ max(vmalert_iteration_duration_seconds{quantile="0.99",job="vmalert"}) by (remot
 
 ```metricsql
 histogram_quantile(0.99,
-  sum(increase(vmagent_remotewrite_duration_seconds_bucket[5m])) by (vmrange,remote_storage_name)
+  sum(increase(vmagent_remotewrite_duration_seconds_bucket{job="vmagent"}[5m])) by (vmrange,remote_storage_name)
 )
 ```
 
@@ -126,7 +126,7 @@ It is recommended also to check the following metrics in order to verify whether
   It is recommended inspecting remote storage logs and vmagent logs in this case.
 
 ```metricsql
-sum(rate(vmagent_remotewrite_packets_dropped_total)) by (remote_storage_name)
+sum(rate(vmagent_remotewrite_packets_dropped_total{job="vmagent"})) by (remote_storage_name)
 ```
 
 - The number of retries when sending data to remote storage. If the value is bigger than zero,
@@ -134,7 +134,7 @@ sum(rate(vmagent_remotewrite_packets_dropped_total)) by (remote_storage_name)
   It is recommended inspecting remote storage logs and vmagent logs in this case.
 
 ```metricsql
-sum(rate(vmagent_remotewrite_retries_count_total)) by (remote_storage_name)
+sum(rate(vmagent_remotewrite_retries_count_total{job="vmagent"})) by (remote_storage_name)
 ```
 
 - The amounts of pending data at vmagent side, which isn't sent to remote storage yet.
@@ -144,7 +144,7 @@ sum(rate(vmagent_remotewrite_retries_count_total)) by (remote_storage_name)
   and the remote storage.
 
 ```metricsql
-sum(vm_persistentqueue_bytes_pending) by (remote_storage_name)
+sum(vm_persistentqueue_bytes_pending{job="vmagent"}) by (remote_storage_name)
 ```
 
 - The number of errors when executing queries from [chart/files/alerts.yaml](chart/files/alerts.yaml).
@@ -152,7 +152,7 @@ sum(vm_persistentqueue_bytes_pending) by (remote_storage_name)
   It is recommended inspection remote storage logs and vmalert logs in this case.
 
 ```metricsql
-sum(rate(vmalert_execution_errors_total)) by (remote_storage_name)
+sum(rate(vmalert_execution_errors_total{job="vmalert"})) by (remote_storage_name)
 ```
 
 The `prometheus-benchmark` doesn't collect metrics from the tested remote storage systems.
