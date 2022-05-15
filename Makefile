@@ -1,21 +1,25 @@
 include services/vmagent-config-updater/Makefile
 
-RELEASE_NAME := vm-benchmark
-NAMESPACE := default # k8s namespace for installing the chart
+# k8s namespace for installing the chart
+# It can be overriden via NAMESPACE environment variable
+NAMESPACE ?= default
+
+# the deployment prefix
+CHART_NAME := my-bench
 
 # print resulting manifests to console without applying them
 debug:
-	helm install --dry-run --debug $(RELEASE_NAME) chart/
+	helm install --dry-run --debug $(CHART_NAME) chart/
 
 # install the chart to configured namespace
 install:
-	helm upgrade -i $(RELEASE_NAME) -n $(NAMESPACE) chart/
+	helm upgrade -i $(CHART_NAME) -n $(NAMESPACE) --create-namespace chart/
 
 # delete the chart from configured namespace
 delete:
-	helm uninstall $(RELEASE_NAME) -n $(NAMESPACE)
+	helm uninstall $(CHART_NAME) -n $(NAMESPACE)
 
-upgrade:
-	helm upgrade $(RELEASE_NAME) -n $(NAMESPACE)
+monitor:
+	kubectl port-forward `kubectl get pods -l 'job=vmsingle,chart-name=$(CHART_NAME)-prometheus-benchmark' -o name` 8428
 
 re-install: delete install

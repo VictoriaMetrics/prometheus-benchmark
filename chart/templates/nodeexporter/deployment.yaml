@@ -1,101 +1,91 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vm-benchmark.fullname" . }}-nodeexporter
+  name: {{ include "prometheus-benchmark.fullname" . }}-nodeexporter
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "vm-benchmark.labels" . | nindent 4 }}
+    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
 spec:
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
-  {{- include "vm-benchmark.selectorLabels" . | nindent 6 }}
+      job: nodeexporter
+      {{- include "prometheus-benchmark.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/nodeexporter/configmap.yaml") . | sha256sum }}
+        checksum/nginx-cm: {{ include (print $.Template.BasePath "/nodeexporter/nginx-cm.yaml") . | sha256sum }}
       labels:
-    {{- include "vm-benchmark.labels" . | nindent 8 }}
+        job: nodeexporter
+        {{- include "prometheus-benchmark.labels" . | nindent 8 }}
     spec:
       containers:
-        - name: nodeexporter
-          image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"
-          imagePullPolicy: "{{ .Values.nodeExporter.image.pullPolicy }}"
-          args:
-            - --path.procfs=/host/proc
-            - --path.sysfs=/host/sys
-            - --path.rootfs=/host/root
-            - --no-collector.wifi
-            - --no-collector.hwmon
-            - --no-collector.time
-            - --no-collector.timex
-            - --no-collector.arp
-            - --no-collector.netdev
-            - --no-collector.netstat
-            - --collector.processes
-            - --web.max-requests=40
-            - --web.listen-address=:{{ .Values.nodeExporter.hostPort }}
-          ports:
-            - name: metrics
-              containerPort: {{ .Values.nodeExporter.hostPort }}
-          resources:
-{{ toYaml .Values.nodeExporter.resources | indent 12 }}
-          volumeMounts:
-            - name: proc
-              mountPath: /host/proc
-              readOnly:  true
-            - name: sys
-              mountPath: /host/sys
-              readOnly: true
-            - name: root
-              mountPath: /host/root
-              mountPropagation: HostToContainer
-              readOnly: true
-        - name: {{ template "vm-benchmark.name" . }}-nginx
-          image: nginx
-          args:
-            - nginx
-            - -c
-            - /opt/nginx/nginx.conf
-          ports:
-            - containerPort: {{ .Values.nodeExporter.hostPortCached }}
-              name: proxy
-              protocol: TCP
-          volumeMounts:
-            - mountPath: /opt/nginx
-              name: nginx-conf
-            - mountPath: /tmp/nginx
-              name: nginx-cache
-            - mountPath: /etc/nginx
-              name: nginx-empty
-      hostNetwork: true
-      {{- if .Values.nodeExporter.tolerations }}
-      tolerations:
-{{ toYaml .Values.nodeExporter.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.nodeExporter.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeExporter.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.nodeExporter.securityContext }}
-      securityContext:
-{{ toYaml .Values.nodeExporter.securityContext | indent 8 }}
-      {{- end }}
-      volumes:
+      - name: nodeexporter
+        image: prom/node-exporter:v1.3.1
+        args:
+        - --path.procfs=/host/proc
+        - --path.sysfs=/host/sys
+        - --path.rootfs=/host/root
+        - --no-collector.wifi
+        - --no-collector.hwmon
+        - --no-collector.time
+        - --no-collector.timex
+        - --no-collector.arp
+        - --no-collector.netdev
+        - --no-collector.netstat
+        - --collector.processes
+        - --web.max-requests=40
+        - --web.listen-address=:9101
+        volumeMounts:
         - name: proc
-          hostPath:
-            path: /proc
+          mountPath: /host/proc
+          readOnly:  true
         - name: sys
-          hostPath:
-            path: /sys
+          mountPath: /host/sys
+          readOnly: true
         - name: root
-          hostPath:
-            path: /
-        - name: nginx-cache
-          emptyDir: {}
-        - name: nginx-conf
-          configMap:
-            name: {{ include "vm-benchmark.fullname" . }}-nginx-conf
-        - name: nginx-empty
-          emptyDir: {}
+          mountPath: /host/root
+          mountPropagation: HostToContainer
+          readOnly: true
+        ports:
+        - containerPort: 9101
+          name: metrics
+      - name: nginx
+        image: nginx:1.21.6
+        args:
+        - nginx
+        - -c
+        - /opt/nginx/nginx.conf
+        ports:
+        - containerPort: 9102
+          name: nginx
+        volumeMounts:
+        - mountPath: /opt/nginx
+          name: nginx-cm
+        - mountPath: /tmp/nginx
+          name: nginx-cache
+        - mountPath: /etc/nginx
+          name: nginx-empty
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: root
+        hostPath:
+          path: /
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-cm
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" . }}-nginx-cm
+      - name: nginx-empty
+        emptyDir: {}

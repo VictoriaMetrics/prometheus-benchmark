@@ -1,16 +1,8 @@
-DOCKER_NAMESPACE := prometheus-benchmark
+# All these commands must run from repository root.
 
-ROOT_IMAGE ?= alpine:3.15.0
-CERTS_IMAGE := alpine:3.15.0
-GO_BUILDER_IMAGE := golang:1.17.7-alpine
-BUILDER_IMAGE := local/builder:2.0.0-$(shell echo $(GO_BUILDER_IMAGE) | tr :/ __)-1
-BASE_IMAGE := local/base:1.1.3-$(shell echo $(ROOT_IMAGE) | tr :/ __)-$(shell echo $(CERTS_IMAGE) | tr :/ __)
+DOCKER_NAMESPACE := victoriametrics
+GO_BUILDER_IMAGE := golang:1.18.1-alpine
 
-GO_BUILDINFO = -X '$(PKG_PREFIX)/lib/buildinfo.Version=$(APP_NAME)'
-GOARCH=amd64
-
-
-DATEINFO_TAG ?= $(shell date -u +'%Y%m%d-%H%M%S')
 BUILDINFO_TAG ?= $(shell echo $$(git describe --long --all | tr '/' '-')$$( \
 	      git diff-index --quiet HEAD -- || echo '-dirty-'$$(git diff-index -u HEAD | openssl sha1 | cut -c 10-17)))
 
@@ -19,8 +11,7 @@ ifeq ($(PKG_TAG),)
 PKG_TAG := $(BUILDINFO_TAG)
 endif
 
-
-app-via-docker: package-builder
+vmagent-config-updater-prod:
 	mkdir -p gocache-for-docker
 	docker run --rm \
 		--user $(shell id -u):$(shell id -g) \
@@ -29,52 +20,31 @@ app-via-docker: package-builder
 		--mount type=bind,src="$(shell pwd)/gocache-for-docker",dst=/gocache \
 		--env GOCACHE=/gocache \
 		--env GO111MODULE=on \
-		--env CGO_ENABLED=on --env GOOS=linux --env GOARCH=amd64 \
-		$(BUILDER_IMAGE) \
-		go build $(RACE) -mod=vendor -trimpath \
-			-ldflags "-extldflags '-static' $(GO_BUILDINFO)" \
-			-tags 'netgo osusergo nethttpomithttp2 musl' \
-			-o bin/$(APP_NAME)$(APP_SUFFIX)-prod prometheus-benchmark/services/$(APP_NAME)
+		--env CGO_ENABLED=0 \
+		--env GOOS=linux \
+		--env GOARCH=amd64 \
+		$(GO_BUILDER_IMAGE) \
+		go build -mod=vendor -trimpath -buildvcs=false \
+			-ldflags "-s -w -extldflags '-static'" \
+			-tags 'netgo osusergo nethttpomithttp2' \
+			-o bin/vmagent-config-updater-prod ./services/vmagent-config-updater
 
-package-base:
-	(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -q '$(BASE_IMAGE)$$') \
-		|| docker build \
-			--build-arg root_image=$(ROOT_IMAGE) \
-			--build-arg certs_image=$(CERTS_IMAGE) \
-			--tag $(BASE_IMAGE) \
-			docker/base
-
-package-builder:
-	(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -q '$(BUILDER_IMAGE)$$') \
-		|| docker build \
-			--build-arg go_builder_image=$(GO_BUILDER_IMAGE) \
-			--tag $(BUILDER_IMAGE) \
-			docker/builder
-
-package-via-docker: package-base
-	(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -q '$(DOCKER_NAMESPACE)/$(APP_NAME):$(PKG_TAG)$(APP_SUFFIX)$(RACE)$$') || (\
-		$(MAKE) app-via-docker && \
+vmagent-config-updater-package: vmagent-config-updater-prod
+	(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -q '$(DOCKER_NAMESPACE)/vmagent-config-updater:$(PKG_TAG)$$') || (\
+		$(MAKE) vmagent-config-updater-prod && \
 		docker build \
-			--build-arg src_binary=$(APP_NAME)$(APP_SUFFIX)-prod \
-			--build-arg base_image=$(BASE_IMAGE) \
-			--tag  victoriametrics/vmagent-config-updater:$(PKG_TAG) \
-			-f services/$(APP_NAME)/Dockerfile bin)
+			--build-arg src_binary=vmagent-config-updater-prod \
+			--tag $(DOCKER_NAMESPACE)/vmagent-config-updater:$(PKG_TAG) \
+			-f services/vmagent-config-updater/Dockerfile bin)
 
-package-via-docker-goarch:
-	APP_SUFFIX='-$(GOARCH)' \
-	DOCKER_OPTS='--env CGO_ENABLED=$(CGO_ENABLED) --env GOOS=linux --env GOARCH=$(GOARCH)' \
-	$(MAKE) package-via-docker
+vmagent-config-updater-publish: vmagent-config-updater-package
+	docker push $(DOCKER_NAMESPACE)/vmagent-config-updater:$(PKG_TAG)
 
-remove-docker-images:
-	docker image ls --format '{{.Repository}}\t{{.ID}}' | grep $(DOCKER_NAMESPACE)/ | awk '{print $$2}' | xargs docker image rm -f
-
-run-via-docker: package-via-docker
+vmagent-config-updater-package-run: vmagent-config-updater-package
 	docker run -it --rm \
 		--user $(shell id -u):$(shell id -g) \
 		--net host \
-		$(DOCKER_OPTS) \
-		victoriametrics/vmagent-config-updater:$(PKG_TAG)
+		$(DOCKER_NAMESPACE)/vmagent-config-updater:$(PKG_TAG)
 
-run-vmagent-config-updater:
-	APP_NAME=vmagent-config-updater \
-	$(MAKE) run-via-docker
+vmagent-config-updater-run: vmagent-config-updater-prod
+	bin/vmagent-config-updater-prod

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      job: vmsingle
+      {{- include "prometheus-benchmark.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/vmsingle-cm: {{ include (print .Template.BasePath "/vmsingle/vmsingle-cm.yaml") . | sha256sum }}
+      labels:
+        job: vmsingle
+        {{- include "prometheus-benchmark.labels" . | nindent 8 }}
+    spec:
+      serviceAccount: {{ include "prometheus-benchmark.fullname" . }}-vmsingle
+      containers:
+      - name: vmsingle
+        image: "victoriametrics/victoria-metrics:{{ .Values.vmtag }}"
+        args:
+        - --httpListenAddr=:8428
+        - --promscrape.config=/config/scrape.yml
+        - --storageDataPath=/data
+        - --promscrape.kubernetesSDCheckInterval=5s
+        ports:
+        - name: metrics
+          containerPort: 8428
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-cm
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-data

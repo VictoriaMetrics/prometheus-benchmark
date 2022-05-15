@@ -1,22 +1,45 @@
 # Prometheus benchmark
-Prometheus benchmark helm chart is used for deploying a simple
-benchmark setup to k8s cluster for benchmarking read (executing PromQL/MetricsQL queries)
-and write (via [Remote Write](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write) protocol)
-path of Prometheus-compatible TSDBs.
-In VictoriaMetrics we use it to run tests against
-our cloud solution, compare performance and compression between releases.
 
-The helm chart deploys three pods:
-* nodeexporter + nginx (2 containers in one pod), where nodeexporter used as a metrics source
-and nginx as cache-server to reduce pressure on nodeexporter;
-* vmagent + vmagent-config-updater (2 containers in one pod) to scrape nodeexporter metrics and forward via remote-write 
-to configured destinations;
-* vmalert + alertmanager (2 containers in one pod), where vmalert executes
-[alerting rules](chart/files/alerts.yaml) and sends notifications to alertmanager. Alertmanager is configured
-to blackhole received notifications. vmalert + alertmanager pod is optional and used for generating the
-read load. To disable pod creation set `.Values.vmalert.enabled=false`.
+Prometheus-benchmark Helm chart deploys a simple benchmark setup in Kubernetes
+for measuring data ingestion and querying performance for Prometheus-compatible systems.
+It can run the benchmark simultaneously against multiple systems -
+just add multiple named entries under `remoteStorages` section at [chart/values.yaml](chart/values.yaml).
 
-Please, check [values.yaml](chart/values.yaml) for configuration params.
+It scrapes metrics from [node_exporter](https://github.com/prometheus/node_exporter)
+and pushes the scraped metrics to the configured Prometheus-compatible remote storage systems.
+These systems must support [Prometheus remote_write API](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write)
+for measuring data ingestion performance. Optionally these systems may support
+[Prometheus querying API](https://prometheus.io/docs/prometheus/latest/querying/api/#instant-queries) for measuring query performance.
+
+The following systems can be tested with prometheus-benchmark:
+
+- [Single-node version of VictoriaMetrics](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html):
+  - [How to push data to VictoriaMetrics](https://docs.victoriametrics.com/#prometheus-setup)
+  - [How to query data from VictoriaMetrics](https://docs.victoriametrics.com/url-examples.html#apiv1query)
+- [Cluster version of VictoriaMetrics](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html):
+  - [How to push and query data in cluster version of VictoriaMetrics](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format)
+- [Grafana Mimir](https://grafana.com/oss/mimir/):
+  - [How to push data to Mimir](https://grafana.com/docs/mimir/latest/operators-guide/reference-http-api/#remote-write)
+  - [How to query data from Mimir](https://grafana.com/docs/mimir/latest/operators-guide/reference-http-api/#instant-query)
+- [Cortex](https://github.com/cortexproject/cortex):
+  - [How to push data to Cortex](https://cortexmetrics.io/docs/api/#remote-write)
+  - [How to query data from Cortex](https://cortexmetrics.io/docs/api/#instant-query)
+- [Thanos](https://github.com/thanos-io/thanos/):
+  - [How to push data to Thanos](https://thanos.io/tip/components/receive.md/)
+  - [How t oquery data from Thanos](https://thanos.io/tip/components/query.md/)
+
+The helm chart deplows the following pods:
+
+- [nodeexporter](https://github.com/prometheus/node_exporter) + nginx (2 containers in one pod).
+  The nodeexporter is used as a metrics source, while nginx is used as a cache proxy
+  for reducing the load on nodeexporter.
+- [vmagent](https://docs.victoriametrics.com/vmagent.html) + vmagent-config-updater (2 containers in one pod).
+  The vmagent is used for collecting metrics from the nodeexporter,
+  while vmagent-config-updater is used for emulating time series churn rate.
+- [vmalert](https://docs.victoriametrics.com/vmalert.html) + alertmanager (2 containers in one pod).
+  The vmalert executes [these alerting rules](chart/files/alerts.yaml) and sends notifications to alertmanager.
+  Alertmanager is configured to blackhole received notifications.
+  vmalert + alertmanager pod is optional and used for generating the read query load.
 
 ## Articles
 
@@ -24,35 +47,114 @@ Please, check [values.yaml](chart/values.yaml) for configuration params.
 
 ## How to run
 
-Check [Makefile](Makefile) for make commands.
+It is expected that [Helm3](https://helm.sh/docs/intro/install/) is already installed
+and configured to communicate with Kubernetes cluster where the prometheus-benchmark should run.
 
-Please check the `NAMESPACE` and `RELEASE_NAME` variables in [Makefile](Makefile)
-before applying any commands.
+Check out the prometheus-benchmark sources:
 
 ```bash
-make install # to install the chart
-make delete # to delete the chart
+git clone https://github.com/VictoriaMetrics/prometheus-benchmark
+cd prometheus-benchmark
 ```
 
-Please note `resources` section [values.yaml](chart/values.yaml) and adjust it accordingly to
-configured workload. The most of resources are supposed to be consumed by vmagent
-and nginx+nodeexporter pods.
+Then edit the [chart/values.yaml](chart/values.yaml) with the desired config params.
+Then optionally edit the [chart/files/alerts.yaml](chart/files/alerts.yaml)
+with the desired queries to execute at remote storage systems.
+Then run the following command in order to install the prometheus-benchmark
+components in Kuberntes and start the benchmark:
 
+```bash
+make install
+```
+
+Run the following command in order to inspect the metrics collected by the benchmark:
+
+```bash
+make monitor
+```
+
+After that go to `http://localhost:8428/targets` in order to see which metrics are collected by the benchmark.
+See [monitoring docs](#monitoring) for details.
+
+After the benchmark is complete, run the following command for removing prometheus-benchmark components from Kuberntes:
+
+```bash
+make delete
+```
+
+By default the `prometheus-benchmark` is deployed in `default` Kubernetes namespace.
+The namespace can be overriden via `NAMESPACE` environment variable.
+For example, the following command starts the `prometheus-benchmark` chart in `foobar` k8s namespace:
+
+```bash
+NAMESPACE=foobar make install
+```
+
+See the [Makefile](Makefile) for more details on available `make` commands.
 
 ## Monitoring
 
-vmagent is configured to scrape and send its own metrics
-with job label `vmagent`. These metrics will be written to the
-configured `.Values.vmagent.url.remoteWrite` destination.
-Use [grafana dashboard](https://grafana.com/grafana/dashboards/12683)
-to monitor vmagent's state.
+The benchmark collects various metrics from its components. These metrics
+are available for querying at `http://localhost:8428/vmui` after running `make monitor` command.
+The following metrics might be interesting to look at during the benchmark:
 
-vmagent is not aware of `url.remoteWrite` VictoriaMetrics configuration
-or its components, so it can't scrape their metrics. Please, configure
-monitoring of `remoteWrite` destination manually by setting up an external monitoring
-or updating [configmap.yaml](chart/templates/vmagent/configmap.yaml) with corresponding
-targets. Use grafana dashboards for [single](https://grafana.com/grafana/dashboards/10229)
-or [cluster](https://grafana.com/grafana/dashboards/11176) versions of VictoriaMetrics.
+- Data ingestion rate:
 
+```metricsql
+sum(rate(vm_promscrape_scraped_samples_sum)) by (remote_storage_name)
+```
 
-All configurations and description of flags you can define in [values.yaml](chart/values.yaml) 
+- 99th percentile for the duration to execute queries at [chart/files/alerts.yaml](chart/files/alerts.yaml):
+
+```metricsql
+max(vmalert_iteration_duration_seconds{quantile="0.99",job="vmalert"}) by (remote_storage_name)
+```
+
+- 99th percentile for the duration to push the collected data to the configured
+  remote storage systems at [chart/values.yaml](chart/values.yaml):
+
+```metricsql
+histogram_quantile(0.99,
+  sum(increase(vmagent_remotewrite_duration_seconds_bucket[5m])) by (vmrange,remote_storage_name)
+)
+```
+
+It is recommended also to check the following metrics in order to verify whether the configured remote storage is capable to handle the configured workload:
+
+- The number of dropped data packets when sending them to the configured remote storage.
+  If the value is bigger than zero, then the remote storage refuses to accept incoming data.
+  It is recommended inspecting remote storage logs and vmagent logs in this case.
+
+```metricsql
+sum(rate(vmagent_remotewrite_packets_dropped_total)) by (remote_storage_name)
+```
+
+- The number of retries when sending data to remote storage. If the value is bigger than zero,
+  then this is a sign that the remote storage cannot handle the workload.
+  It is recommended inspecting remote storage logs and vmagent logs in this case.
+
+```metricsql
+sum(rate(vmagent_remotewrite_retries_count_total)) by (remote_storage_name)
+```
+
+- The amounts of pending data at vmagent side, which isn't sent to remote storage yet.
+  If the graph grows, then the remote storage cannot keep up with the given data ingestion rate.
+  Sometimes increasing the `writeConcurrency` at [chart/values.yaml](chart/values.yaml)
+  may help if there is a high network latency between vmagent at prometheus-benchmark
+  and the remote storage.
+
+```metricsql
+sum(vm_persistentqueue_bytes_pending) by (remote_storage_name)
+```
+
+- The number of errors when executing queries from [chart/files/alerts.yaml](chart/files/alerts.yaml).
+  If the value is bigger than zero, then the remote storage cannot handle the query workload.
+  It is recommended inspection remote storage logs and vmalert logs in this case.
+
+```metricsql
+sum(rate(vmalert_execution_errors_total)) by (remote_storage_name)
+```
+
+The `prometheus-benchmark` doesn't collect metrics from the tested remote storage systems.
+It is expected that a separate monitoring is set up for whitebox monitoring
+of the tested remote storage systems.

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  {{ include "prometheus-benchmark.fullname" . }}-vmsingle-cm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+data:
+  scrape.yml: |
+    global:
+      scrape_interval: 5s
+    scrape_configs:
+    - job_name: pods
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          own_namespace: true
+        selectors:
+        - role: pod
+          label: 'chart-name={{ include "prometheus-benchmark.fullname" . }}'
+      relabel_configs:
+      - if: '{__meta_kubernetes_pod_container_port_name="metrics"}'
+        action: keep
+      - action: labelmap
+        regex: "__meta_kubernetes_pod_label_(.+)"
+      - action: labeldrop
+        regex: "pod_template_hash"
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: container

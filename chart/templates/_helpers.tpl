@@ -1,60 +1,27 @@
 {{/*
-Expand the name of the chart.
-*/}}
-{{- define "vm-benchmark.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
 Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
 */}}
-{{- define "vm-benchmark.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
+{{- define "prometheus-benchmark.fullname" -}}
+{{ .Release.Name }}-{{ .Chart.Name }}
 {{- end }}
 
 {{/*
-Create chart name and version as used by the chart label.
+Selector labels for deployed objects.
 */}}
-{{- define "vm-benchmark.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- define "prometheus-benchmark.selectorLabels" -}}
+chart-name: {{ include "prometheus-benchmark.fullname" . }}
 {{- end }}
 
 {{/*
-Common labels
+Common labels for all the deployed objects.
+They include selector labels plus the recommended labels for Helm charts.
+See https://helm.sh/docs/chart_best_practices/labels/
 */}}
-{{- define "vm-benchmark.labels" -}}
-helm.sh/chart: {{ include "vm-benchmark.chart" . }}
-{{ include "vm-benchmark.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-
-{{/*
-Selector labels
-*/}}
-{{- define "vm-benchmark.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "vm-benchmark.name" . }}
+{{- define "prometheus-benchmark.labels" -}}
+{{ include "prometheus-benchmark.selectorLabels" . }}
+helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "vm-benchmark.nginxCached" -}}
-{{- $port := .Values.nodeExporter.hostPortCached | int }}
-{{- printf "%s-exporter.%s.svc:%d" (include "vm-benchmark.fullname" .) .Release.Namespace $port }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{- end }}

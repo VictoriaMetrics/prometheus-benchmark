@@ -1,91 +1,123 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
-	"prometheus-benchmark/services/vmagent-config-updater/models"
-	"prometheus-benchmark/services/vmagent-config-updater/runner"
-
-	"github.com/VictoriaMetrics/VictoriaMetrics/lib/envflag"
-	"github.com/VictoriaMetrics/VictoriaMetrics/lib/httpserver"
-	"github.com/VictoriaMetrics/VictoriaMetrics/lib/logger"
-	"github.com/VictoriaMetrics/VictoriaMetrics/lib/procutil"
-)
-
-const (
-	configPath = "/api/v1/config"
+	"gopkg.in/yaml.v2"
 )
 
 var (
-	listenAddr                = flag.String("http.listenAddr", ":8436", "address with port for listening for HTTP requests")
-	configUpdateInterval      = flag.Duration("config.updateInterval", time.Second*10, "How frequent to refresh the configuration. See also 'config.targetsToUpdatePercentage'")
-	targetsToUpdatePercentage = flag.Int("config.targetsToUpdatePercentage", 10, "Percentage of the targets which would be updated with unique label on the next configuration update. Non-zero value will result in constant Churn Rate")
-	targetsCount              = flag.Int("config.targetsCount", 1000, "Defines how many scrape targets to generate in scrape config. Each target will have the same address defined by 'config.targetAddr' but each with unique label.")
-	targetAddr                = flag.String("config.targetAddr", "vm-benchmark-exporter.default.svc:9102", "Address with port to use as target address in scrape config")
-	scrapeInterval            = flag.Duration("config.scrapeInterval", time.Second*5, "Defines how frequently to scrape targets")
-	jobName                   = flag.String("config.jobName", "node_exporter", "Defines the job name for scrape targets")
+	listenAddr                 = flag.String("httpListenAddr", ":8436", "TCP address for incoming HTTP requests")
+	targetsCount               = flag.Int("targetsCount", 100, "The number of scrape targets to return from -httpListenAddr. Each target has the same address defined by -targetAddr")
+	targetAddr                 = flag.String("targetAddr", "demo.robustperception.io:9090", "Address with port to use as target address the scrape config returned from -httpListenAddr")
+	scrapeInterval             = flag.Duration("scrapeInterval", time.Second*5, "The scrape_interval to set at the scrape config returned from -httpListenAddr")
+	scrapeConfigUpdateInterval = flag.Duration("scrapeConfigUpdateInterval", time.Minute*10, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr every -scrapeConfigUpdateInterval")
+	scrapeConfigUpdatePercent  = flag.Float64("scrapeConfigUpdatePercent", 1, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr ever -scrapeConfigUpdateInterval")
 )
 
 func main() {
-	envflag.Parse()
-	logger.Init()
-	logger.Infof("starting config updater service")
-
-	rand.Seed(time.Now().UnixNano())
-
-	c := models.InitConfigManager(models.NewConfig(
-		models.WithTargetCount(*targetsCount),
-		models.WithTargetsToUpdatePercentage(*targetsToUpdatePercentage),
-		models.WithTargetAddr(*targetAddr),
-		models.WithScrapeInterval(*scrapeInterval),
-		models.WithJobName(*jobName)))
-
-	r := runner.New(func(ctx context.Context) error {
-		return c.Update()
+	flag.Parse()
+	flag.VisitAll(func(f *flag.Flag) {
+		log.Printf("-%s=%s", f.Name, f.Value)
 	})
-
-	if err := r.Run(*configUpdateInterval); err != nil {
-		logger.Fatalf("failed to run vmagent config updater: %s", err)
+	c := newConfig(*targetsCount, *scrapeInterval, *targetAddr)
+	var cLock sync.Mutex
+	p := *scrapeConfigUpdatePercent / 100
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	go func() {
+		rev := 0
+		for range time.Tick(*scrapeConfigUpdateInterval) {
+			rev++
+			revStr := fmt.Sprintf("r%d", rev)
+			cLock.Lock()
+			for _, sc := range c.ScrapeConfigs {
+				for _, stc := range sc.StaticConfigs {
+					if r.Float64() >= p {
+						continue
+					}
+					stc.Labels["revision"] = revStr
+				}
+			}
+			cLock.Unlock()
+		}
+	}()
+	rh := func(w http.ResponseWriter, r *http.Request) {
+		cLock.Lock()
+		data := c.marshalYAML()
+		cLock.Unlock()
+		w.Header().Set("Content-Type", "text/yaml")
+		w.Write(data)
 	}
-
-	go httpserver.Serve(*listenAddr, requestHandler)
-
-	logger.Infof("listening on: %v", *listenAddr)
-	procutil.WaitForSigterm()
-	logger.Infof("got stop signal, shutting down service.")
-
-	if err := r.Close(); err != nil {
-		logger.Errorf("failed to stop config updater: %s", err)
-	}
-
-	if err := httpserver.Stop(*listenAddr); err != nil {
-		logger.Fatalf("failed to stop the HTTP: %s", err)
+	hf := http.HandlerFunc(rh)
+	log.Printf("starting scrape config updater at http://%s/", *listenAddr)
+	if err := http.ListenAndServe(*listenAddr, hf); err != nil {
+		log.Fatalf("unexpected error when running the http server: %s", err)
 	}
 }
 
-func requestHandler(w http.ResponseWriter, r *http.Request) bool {
-	if r.Method != http.MethodGet {
-		return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("unsupported HTTP method %q", r.Method))
+func (c *config) marshalYAML() []byte {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		log.Fatalf("BUG: unexpected error when marshaling config: %s", err)
 	}
-	if r.URL.Path != configPath {
-		return respondWithError(w, r, http.StatusBadRequest, fmt.Errorf("unsupported path %q", r.URL.Path))
-	}
-	w.Header().Set("Content-Type", "plain/text")
-	if _, err := w.Write(models.GetConfig()); err != nil {
-		logger.Errorf("failed to write response: %s", err)
-		return false
-	}
-	return true
+	return data
 }
 
-func respondWithError(w http.ResponseWriter, r *http.Request, statusCode int, err error) bool {
-	logger.Errorf(err.Error(), r.URL.Path)
-	w.WriteHeader(statusCode)
-	_, _ = w.Write([]byte(err.Error()))
-	return true
+func newConfig(targetsCount int, scrapeInterval time.Duration, targetAddr string) *config {
+	scs := make([]*staticConfig, 0, targetsCount)
+	for i := 0; i < targetsCount; i++ {
+		scs = append(scs, &staticConfig{
+			Targets: []string{targetAddr},
+			Labels: map[string]string{
+				"instance": fmt.Sprintf("host-%d", i),
+				"revision": "r0",
+			},
+		})
+	}
+	return &config{
+		Global: globalConfig{
+			ScrapeInterval: scrapeInterval,
+		},
+		ScrapeConfigs: []*scrapeConfig{
+			{
+				JobName:       "node_exporter",
+				StaticConfigs: scs,
+			},
+		},
+	}
+}
+
+// config represents essential parts from Prometheus config defined at https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+type config struct {
+	Global        globalConfig    `yaml:"global"`
+	ScrapeConfigs []*scrapeConfig `yaml:"scrape_configs"`
+}
+
+// globalConfig represents essential parts for `global` section of Prometheus config.
+//
+// See https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+type globalConfig struct {
+	ScrapeInterval time.Duration `yaml:"scrape_interval"`
+}
+
+// rapeConfig represents essential parts for `scrape_config` section of Prometheus config.
+//
+// See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config
+type scrapeConfig struct {
+	JobName       string          `yaml:"job_name"`
+	StaticConfigs []*staticConfig `yaml:"static_configs"`
+}
+
+// staticConfig represents essential parts for `static_config` section of Prometheus config.
+//
+// See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#static_config
+type staticConfig struct {
+	Targets []string          `yaml:"targets"`
+	Labels  map[string]string `yaml:"labels"`
 }

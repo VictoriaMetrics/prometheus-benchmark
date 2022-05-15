@@ -1,80 +1,63 @@
-{{- if .Values.vmalert.enabled -}}
-{{ range $idx, $url := .Values.vmalert.urls }}
+{{ range $rsName, $rs := .Values.remoteStorages }}
+{{- if $rs.readURL -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "vm-benchmark.fullname" $ }}-vmalert-{{ $idx}}
+  name: {{ include "prometheus-benchmark.fullname" $ }}-vmalert-{{ $rsName }}
   namespace: {{ $.Release.Namespace }}
   labels:
-  {{- include "vm-benchmark.labels" $ | nindent 4 }}
+    {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
 spec:
   selector:
     matchLabels:
-  {{- include "vm-benchmark.selectorLabels" $ | nindent 6 }}
+      job: vmalert
+      remote-storage-name: {{ $rsName | quote }}
+      {{- include "prometheus-benchmark.selectorLabels" $ | nindent 6 }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/vmalert/vmalert-cm.yaml") $ | sha256sum }}
+        checksum/vmalert-cm: {{ include (print $.Template.BasePath "/vmalert/vmalert-cm.yaml") $ | sha256sum }}
+        checksum/alertmanager-cm: {{ include (print $.Template.BasePath "/vmalert/alertmanager-cm.yaml") $ | sha256sum }}
       labels:
-   {{- include "vm-benchmark.selectorLabels" $ | nindent 8 }}
+        job: vmalert
+        remote-storage-name: {{ $rsName | quote }}
+        {{- include "prometheus-benchmark.labels" $ | nindent 8 }}
     spec:
       containers:
-        - name: vmalert
-          image: "{{ $.Values.vmalert.image.repository }}:{{ $.Values.vmalert.image.tag }}"
-          imagePullPolicy: "{{ $.Values.vmalert.image.pullPolicy }}"
-          args:
-            - --httpListenAddr=:{{ $.Values.vmalert.port }}
-            - --notifier.url=http://127.0.0.1:{{ $.Values.vmalert.amPort }}
-            - --rule=/config/alerts.yml
-            - --evaluationInterval={{ $.Values.vmalert.evaluationInterval }}
-            - --datasource.url={{ $url.datasource.url }}
-            {{- if $url.datasource.token }}
-            - --datasource.bearerToken={{ $url.datasource.token }}
-            {{- end }}
-            {{- if $url.remoteWrite.url }}
-            - --remoteWrite.url={{ $url.remoteWrite.url }}
-            {{- end }}
-            {{- if $url.remoteWrite.token }}
-            - --remoteWrite.bearerToken={{ $url.remoteWrite.token }}
-          {{- end }}
-          ports:
-            - name: metrics
-              containerPort: {{ $.Values.vmalert.port }}
-          resources:
-{{ toYaml $.Values.vmalert.resources | indent 12 }}
-          volumeMounts:
-            - name: vmalert-cfg
-              mountPath: /config
-
-        - name: alertmanager
-          image: prom/alertmanager
-          imagePullPolicy: "{{ $.Values.vmalert.image.pullPolicy }}"
-          args:
-            - --web.listen-address=:{{ $.Values.vmalert.amPort }}
-            - --config.file=/config/alertmanager.yml
-          ports:
-            - name: am
-              containerPort: {{ $.Values.vmalert.amPort }}
-          resources:
-          {{ toYaml $.Values.vmalert.resources | indent 12 }}
-          volumeMounts:
-            - name: alertmanager-cfg
-              mountPath: /config
-      {{- if $.Values.vmalert.tolerations }}
-      tolerations:
-{{ toYaml $.Values.vmalert.tolerations | indent 8 }}
-      {{- end }}
-      {{- if $.Values.vmalert.nodeSelector }}
-      nodeSelector:
-{{ toYaml $.Values.vmalert.nodeSelector | indent 8 }}
-      {{- end }}
-      volumes:
+      - name: vmalert
+        image: "victoriametrics/vmalert:{{ $.Values.vmtag }}"
+        args:
+        - --httpListenAddr=:8880
+        - --notifier.url=http://127.0.0.1:9093
+        - --rule=/config/alerts.yml
+        - --evaluationInterval={{ $.Values.queryInterval }}
+        - --datasource.url={{ $rs.readURL }}
+        {{- if $rs.readBearerToken }}
+        - --datasource.bearerToken={{ $rs.readBearerToken }}
+        {{- end }}
+        ports:
+        - name: metrics
+          containerPort: 8880
+        volumeMounts:
         - name: vmalert-cfg
-          configMap:
-            name: {{ include "vm-benchmark.fullname" $ }}-vmalert-cm
+          mountPath: /config
+      - name: alertmanager
+        image: prom/alertmanager:v0.24.0
+        args:
+        - --web.listen-address=:9093
+        - --config.file=/config/alertmanager.yml
+        volumeMounts:
         - name: alertmanager-cfg
-          configMap:
-            name: {{ include "vm-benchmark.fullname" $ }}-alertmanager-cm
+          mountPath: /config
+      volumes:
+      - name: vmalert-cfg
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" $ }}-vmalert-cm
+      - name: alertmanager-cfg
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" $ }}-alertmanager-cm
 ---
-{{ end }}
 {{- end }}
+{{ end }}

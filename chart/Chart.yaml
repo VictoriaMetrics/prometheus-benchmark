@@ -1,6 +1,6 @@
 apiVersion: v2
-name: vm-benchmark
-description: A Helm chart for VictoriaMetrics remote write benchmark
+name: prometheus-benchmark
+description: A Helm chart for Prometheus benchmark
 type: application
-version: 0.1.0
-appVersion: "1.16.0"
+version: 0.2.0
+appVersion: "1.17.0"

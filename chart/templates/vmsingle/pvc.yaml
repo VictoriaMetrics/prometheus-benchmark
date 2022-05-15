@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8G
