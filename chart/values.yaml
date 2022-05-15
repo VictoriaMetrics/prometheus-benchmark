@@ -5,14 +5,14 @@ vmtag: "v1.77.1"
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
 # to remoteStorages.
-# Every nodeexporter exposes around 500 unique metrics, so when targetsCount
-# is set to 100, then the benchmark generates around 500*100=50K active time series.
-targetsCount: 100
+# Every nodeexporter exposes around 815 unique metrics, so when targetsCount
+# is set to 1000, then the benchmark generates around 815*100=815K active time series.
+targetsCount: 1000
 
 # scrapeInterval defines how frequently to scrape nodeexporter targets.
 # This option allows to configure data ingestion rate per every remoteStorages.
-# For example, if the benchmark generates 50K active time series and scrapeInterval
-# is set to 10s, then the data ingestion rate equals to 50K/10s = 5K samples/sec.
+# For example, if the benchmark generates 815K active time series and scrapeInterval
+# is set to 10s, then the data ingestion rate equals to 815K/10s = 81.5K samples/sec.
 scrapeInterval: 10s
 
 # queryInterval is how often to send queries from files/alerts.yaml to remoteStorages.readURL
@@ -24,17 +24,17 @@ queryInterval: 10s
 # which are updated with unique label on every scrape config update
 # (see scrapeConfigUpdateInterval).
 # This option allows tuning time series churn rate.
-# For example, if scrapeConfigUpdatePercent is set to 1 for targetsCount=100,
-# then a single target gets updated labels on every scrape config update.
-# This generates around 500 new time series every scrapeConfigUpdateInterval.
+# For example, if scrapeConfigUpdatePercent is set to 1 for targetsCount=1000,
+# then around 10 targets gets updated labels on every scrape config update.
+# This generates around 815*10=8150 new time series every scrapeConfigUpdateInterval.
 scrapeConfigUpdatePercent: 1
 
 # scrapeConfigUpdateInterval specifies how frequently to update labels
 # across scrapeConfigUpdatePercent nodeexporter targets.
 # This option allows tuning time series churn rate.
-# For example, if scrapeConfigUpdateInterval is set to 10m for targetsCount=100
-# and scrapeConfigUpdatePercent=1, then a single target gets updated labels every 10 minutes.
-# This generates around 500 new time series every 10 minutes.
+# For example, if scrapeConfigUpdateInterval is set to 10m for targetsCount=1000
+# and scrapeConfigUpdatePercent=1, then around 10 targets gets updated labels every 10 minutes.
+# This generates around 815*10=8150 new time series every 10 minutes.
 scrapeConfigUpdateInterval: 10m
 
 # writeConcurrenty is the number of concurrent tcp connections to use

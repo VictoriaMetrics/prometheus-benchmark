@@ -2,14 +2,19 @@
 
 Prometheus-benchmark allows testing data ingestion and querying performance
 for Prometheus-compatible systems on production-like workload.
-Multiple systems can be tested simultaneously - just add multiple named entries
-under `remoteStorages` section at [chart/values.yaml](chart/values.yaml).
 
-The prometheus-benchmark scrapes metrics from [node_exporter](https://github.com/prometheus/node_exporter)
-and pushes the scraped metrics to the configured Prometheus-compatible remote storage systems.
-These systems must support [Prometheus remote_write API](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write)
-for measuring data ingestion performance. Optionally these systems may support
-[Prometheus querying API](https://prometheus.io/docs/prometheus/latest/querying/api/#instant-queries) for measuring query performance.
+Prometheus-benchmark provides the following features:
+
+- It generates production-like worlkoad for both data ingestion and querying paths:
+  - It generates write workload from [node_exporter](https://github.com/prometheus/node_exporter) metrics.
+    This is the most frequently used exporter for Prometheus metrics.
+  - It generates read workload from typical alering rules for `node_exporter` metrics - see [chart/files/alerts.yaml](chart/files/alerts.yaml).
+- It allows generating [time series churn rate](https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate)
+  via [scrapeConfigUpdatePercent](https://github.com/VictoriaMetrics/prometheus-benchmark/blob/f6a69052413618c607758d5469e43e508792aff7/chart/values.yaml#L30)
+  and [scrapeConfigUpdateInterval](https://github.com/VictoriaMetrics/prometheus-benchmark/blob/f6a69052413618c607758d5469e43e508792aff7/chart/values.yaml#L38)
+  options. The churn rate is typical for Kubernetes monitoring.
+- Multiple systems can be tested simultaneously - just add multiple named entries
+  under `remoteStorages` section at [chart/values.yaml](chart/values.yaml).
 
 The following systems can be tested with prometheus-benchmark:
 
@@ -27,6 +32,14 @@ The following systems can be tested with prometheus-benchmark:
 - [Thanos](https://github.com/thanos-io/thanos/):
   - [How to push data to Thanos](https://thanos.io/tip/components/receive.md/)
   - [How t oquery data from Thanos](https://thanos.io/tip/components/query.md/)
+
+## How does it work?
+
+The prometheus-benchmark scrapes metrics from [node_exporter](https://github.com/prometheus/node_exporter)
+and pushes the scraped metrics to the configured Prometheus-compatible remote storage systems.
+These systems must support [Prometheus remote_write API](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write)
+for measuring data ingestion performance. Optionally these systems may support
+[Prometheus querying API](https://prometheus.io/docs/prometheus/latest/querying/api/#instant-queries) for measuring query performance.
 
 The helm chart deploys the following pods:
 
