@@ -28,12 +28,12 @@ The following systems can be tested with prometheus-benchmark:
   - [How to push data to Thanos](https://thanos.io/tip/components/receive.md/)
   - [How t oquery data from Thanos](https://thanos.io/tip/components/query.md/)
 
-The helm chart deplows the following pods:
+The helm chart deploys the following pods:
 
 - [nodeexporter](https://github.com/prometheus/node_exporter) + nginx (2 containers in one pod).
   The nodeexporter is used as a metrics source, while nginx is used as a cache proxy
   for reducing the load on nodeexporter.
-- [vmagent](https://docs.victoriametrics.com/vmagent.html) + vmagent-config-updater (2 containers in one pod).
+- [vmagent](https://docs.victoriametrics.com/vmagent.html) + [vmagent-config-updater](services/vmagent-config-updater/README.md) (2 containers in one pod).
   The vmagent is used for collecting metrics from the nodeexporter,
   while vmagent-config-updater is used for emulating time series churn rate.
 - [vmalert](https://docs.victoriametrics.com/vmalert.html) + alertmanager (2 containers in one pod).
