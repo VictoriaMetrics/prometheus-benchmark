@@ -20,6 +20,6 @@ delete:
 	helm uninstall $(CHART_NAME) -n $(NAMESPACE)
 
 monitor:
-	kubectl port-forward `kubectl get pods -l 'job=vmsingle,chart-name=$(CHART_NAME)-prometheus-benchmark' -o name` 8428
+	kubectl port-forward `kubectl -n $(NAMESPACE) get pods -n $(NAMESPACE) -l 'job=vmsingle,chart-name=$(CHART_NAME)-prometheus-benchmark' -o name` 8428
 
 re-install: delete install
