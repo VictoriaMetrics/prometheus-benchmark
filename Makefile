@@ -9,7 +9,7 @@ CHART_NAME := my-bench
 
 # print resulting manifests to console without applying them
 debug:
-	helm install --dry-run --debug $(CHART_NAME) chart/
+	helm install --dry-run --debug $(CHART_NAME) -n $(NAMESPACE) chart/
 
 # install the chart to configured namespace
 install:
