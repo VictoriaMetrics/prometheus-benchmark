@@ -41,6 +41,7 @@ spec:
         - --promscrape.configCheckInterval=1s
         - --remoteWrite.url={{ $rs.writeURL }}
         - --remoteWrite.tmpDataPath=/vmagent-data
+        - --remoteWrite.maxDiskUsagePerURL=2GiB
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
         {{- if $rs.writeBearerToken }}
         - --remoteWrite.bearerToken={{ $rs.writeBearerToken }}
