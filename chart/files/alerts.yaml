@@ -2,6 +2,7 @@
 ##  from https://awesome-prometheus-alerts.grep.to/rules.html#host-and-hardware-1
 groups:
   - name: nodeexporter
+    concurrency: 4
     rules:
     - alert: HostOutOfMemory
       expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
