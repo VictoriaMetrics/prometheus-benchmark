@@ -20,6 +20,10 @@ spec:
         job: vmsingle
         {{- include "prometheus-benchmark.labels" . | nindent 8 }}
     spec:
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccount: {{ include "prometheus-benchmark.fullname" . }}-vmsingle
       containers:
       - name: vmsingle
