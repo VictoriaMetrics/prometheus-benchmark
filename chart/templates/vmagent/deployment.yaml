@@ -1,8 +1,9 @@
 {{ range $rsName, $rs := .Values.remoteStorages }}
+{{ range $replica := until ($.Values.writeReplicas | int) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" $ }}-vmagent-{{ $rsName }}
+  name: {{ include "prometheus-benchmark.fullname" $ }}-vmagent-{{ $rsName }}-replica-{{ $replica }}
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
@@ -43,6 +44,7 @@ spec:
         - --remoteWrite.tmpDataPath=/vmagent-data
         - --remoteWrite.maxDiskUsagePerURL=2GiB
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
+        - --remoteWrite.label=replica={{ $replica }}
         {{- if $rs.writeBearerToken }}
         - --remoteWrite.bearerToken={{ $rs.writeBearerToken }}
         {{- end }}
@@ -59,4 +61,5 @@ spec:
       - name: vmagent-data
         emptyDir: {}
 ---
+{{ end }}
 {{ end }}
