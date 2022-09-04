@@ -37,6 +37,11 @@ spec:
         {{- if $rs.readBearerToken }}
         - --datasource.bearerToken={{ $rs.readBearerToken }}
         {{- end }}
+        {{- if $rs.readHeaders }}
+        - --remoteRead.headers={{ $rs.readHeaders }}
+        - --remoteWrite.headers={{ $rs.readHeaders }}
+        - --datasource.headers={{ $rs.readHeaders }}
+        {{- end }}
         ports:
         - name: metrics
           containerPort: 8880

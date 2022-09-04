@@ -46,6 +46,9 @@ spec:
         {{- if $rs.writeBearerToken }}
         - --remoteWrite.bearerToken={{ $rs.writeBearerToken }}
         {{- end }}
+        {{- if $rs.writeHeaders }}
+        - --remoteWrite.headers={{ $rs.writeHeaders }}
+        {{- end }}
         ports:
         - name: metrics
           containerPort: 8429

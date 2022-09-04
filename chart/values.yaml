@@ -1,6 +1,6 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
-# which run inside the prometheus-benchmark - e.g. vmaget, vmalert, vmsingle.
-vmtag: "v1.77.1"
+# which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
+vmtag: "v1.80.0"
 
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
@@ -37,7 +37,7 @@ scrapeConfigUpdatePercent: 1
 # This generates around 815*10=8150 new time series every 10 minutes.
 scrapeConfigUpdateInterval: 10m
 
-# writeConcurrenty is the number of concurrent tcp connections to use
+# writeConcurrency is the number of concurrent tcp connections to use
 # for sending the data to the tested remoteStorages.
 # Increase this value if there is a high network latency between prometheus-benchmark
 # components and the tested remoteStorages.
@@ -68,6 +68,12 @@ remoteStorages:
     writeBearerToken: ""
     # readBearerToken is an optional bearer token to use when querying data from readURL.
     readBearerToken: ""
+    # writeHeaders is an optional list of headers in form `header:value`, attached to every write request.
+    # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
+    writeHeaders: ""
+    # readHeaders is an optional list of headers in form `header:value`, attached to every read request.
+    # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
+    readHeaders: ""
   vm-1:
     writeURL: "http://victoria-metrics-victoria-metrics-cluster-vminsert.default.svc.cluster.local:8480/insert/1/prometheus/api/v1/write"
     readURL: "http://victoria-metrics-victoria-metrics-cluster-vmselect.default.svc.cluster.local:8481/select/1/prometheus/"
