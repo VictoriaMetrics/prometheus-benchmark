@@ -47,7 +47,7 @@ writeConcurrency: 16
 # each replica will scrape targetsCount targets and will have
 # its own extra label `replica` attached to written time series.
 # this option is useful for scaling the writers horizontally.
-writeReplicas: 1
+# writeReplicas: 1
 
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
