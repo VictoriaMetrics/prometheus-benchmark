@@ -23,6 +23,10 @@ spec:
         remote-storage-name: {{ $rsName | quote }}
         {{- include "prometheus-benchmark.labels" $ | nindent 8 }}
     spec:
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: vmagent-config-updater
         image: "victoriametrics/vmagent-config-updater:v1.1.0"
