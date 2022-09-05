@@ -43,6 +43,12 @@ scrapeConfigUpdateInterval: 10m
 # components and the tested remoteStorages.
 writeConcurrency: 16
 
+# replicas defines how many pods of writers to deploy.
+# each replica will scrape targetsCount targets and will have
+# its own extra label `replica` attached to written time series.
+# this option is useful for scaling the writers horizontally.
+# writeReplicas: 1
+
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
 # These systems must also support Prometheus querying API if query performance
