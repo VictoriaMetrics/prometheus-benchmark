@@ -1,5 +1,5 @@
 {{ range $rsName, $rs := .Values.remoteStorages }}
-{{ range $replica := until ($.Values.writeReplicas | int) }}
+{{ range $replica := until ($.Values.writeReplicas | default 1 | int) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
