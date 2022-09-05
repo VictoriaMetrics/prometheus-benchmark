@@ -4,7 +4,7 @@ vmtag: "v1.80.0"
 
 # nodeSelector is the list of key-value pairs for selecting instances
 # where benchmark pods should be deployed.
-nodeSelector: {}
+#nodeSelector: {}
 
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
