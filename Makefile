@@ -2,10 +2,10 @@ include services/vmagent-config-updater/Makefile
 
 # k8s namespace for installing the chart
 # It can be overriden via NAMESPACE environment variable
-NAMESPACE ?= default
+NAMESPACE ?= vm-benchmark
 
 # the deployment prefix
-CHART_NAME := my-bench
+CHART_NAME := rw-benchmark
 
 # print resulting manifests to console without applying them
 debug:

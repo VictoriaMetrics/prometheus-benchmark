@@ -27,7 +27,7 @@ spec:
       serviceAccount: {{ include "prometheus-benchmark.fullname" . }}-vmsingle
       containers:
       - name: vmsingle
-        image: "victoriametrics/victoria-metrics:{{ .Values.vmtag }}"
+        image: "victoriametrics/victoria-metrics:v1.80.0"
         args:
         - --httpListenAddr=:8428
         - --promscrape.config=/config/scrape.yml

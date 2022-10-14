@@ -12,7 +12,7 @@ data:
     pid /tmp/nginx.pid;
     worker_rlimit_nofile 608192;
       events {
-        worker_connections  10000;  ## Default: 1024
+        worker_connections  60000;  ## Default: 1024
         multi_accept on; ## https://nginx.org/en/docs/ngx_core_module.html#multi_accept
         use epoll; ## https://nginx.org/en/docs/events.html#epoll
     }
@@ -31,7 +31,7 @@ data:
         tcp_nopush on;
         tcp_nodelay on;
         server_tokens off;
-        keepalive_requests 1000;
+        keepalive_requests 60000;
 
         location / {
           proxy_pass http://127.0.0.1:9101;

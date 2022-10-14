@@ -1,17 +1,18 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
-vmtag: "v1.80.0"
+vmtag: "heads-master-0-g66d81bec4-amd64"
 
 # nodeSelector is the list of key-value pairs for selecting instances
 # where benchmark pods should be deployed.
-#nodeSelector: {}
+nodeSelector:
+  app: benchmark
 
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
 # to remoteStorages.
 # Every nodeexporter exposes around 815 unique metrics, so when targetsCount
 # is set to 1000, then the benchmark generates around 815*100=815K active time series.
-targetsCount: 1000
+targetsCount: 5000
 
 # scrapeInterval defines how frequently to scrape nodeexporter targets.
 # This option allows to configure data ingestion rate per every remoteStorages.
@@ -22,7 +23,7 @@ scrapeInterval: 10s
 # queryInterval is how often to send queries from files/alerts.yaml to remoteStorages.readURL
 # This option can be used for tuning read load at remoteStorages.
 # It is a good rule of thumb to keep it in sync with scrapeInterval.
-queryInterval: 10s
+# queryInterval: 10s
 
 # scrapeConfigUpdatePercent is the percent of nodeexporter targets
 # which are updated with unique label on every scrape config update
@@ -31,7 +32,7 @@ queryInterval: 10s
 # For example, if scrapeConfigUpdatePercent is set to 1 for targetsCount=1000,
 # then around 10 targets gets updated labels on every scrape config update.
 # This generates around 815*10=8150 new time series every scrapeConfigUpdateInterval.
-scrapeConfigUpdatePercent: 1
+scrapeConfigUpdatePercent: 0
 
 # scrapeConfigUpdateInterval specifies how frequently to update labels
 # across scrapeConfigUpdatePercent nodeexporter targets.
@@ -45,13 +46,13 @@ scrapeConfigUpdateInterval: 10m
 # for sending the data to the tested remoteStorages.
 # Increase this value if there is a high network latency between prometheus-benchmark
 # components and the tested remoteStorages.
-writeConcurrency: 16
+writeConcurrency: 20
 
 # replicas defines how many pods of writers to deploy.
 # each replica will scrape targetsCount targets and will have
 # its own extra label `replica` attached to written time series.
 # this option is useful for scaling the writers horizontally.
-# writeReplicas: 1
+writeReplicas: 20
 
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
@@ -60,30 +61,10 @@ writeConcurrency: 16
 remoteStorages:
   # the name of the remote storage to test.
   # The name is added to remote_storage_name label at collected metrics
-  vm-0:
+  vm:
     # writeURL should contain the url, which accepts Prometheus remote_write
     # protocol at the tested remote storage.
     # For example, the following urls may be used for testing VictoriaMetrics:
     # - http://<victoriametrics-addr>:8428/api/v1/write for single-node VictoriaMetrics
     # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
-    writeURL: "http://victoria-metrics-victoria-metrics-cluster-vminsert.default.svc.cluster.local:8480/insert/0/prometheus/api/v1/write"
-    # readURL is an optional url when query performance needs to be tested.
-    # The query performance is tested by sending alerting queries from files/alerts.yaml
-    # to readURL.
-    # For example, the following urls may be used for testing query performance:
-    # - http://<victoriametrics-addr>:8428/ for single-node VictoriaMetrics
-    # - http://<vmselect-addr>:8481/select/0/prometheus/ for cluster VictoriaMetrics
-    readURL: "http://victoria-metrics-victoria-metrics-cluster-vmselect.default.svc.cluster.local:8481/select/0/prometheus/"
-    # writeBearerToken is an optional bearer token to use when writing data to writeURL.
-    writeBearerToken: ""
-    # readBearerToken is an optional bearer token to use when querying data from readURL.
-    readBearerToken: ""
-    # writeHeaders is an optional list of headers in form `header:value`, attached to every write request.
-    # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
-    writeHeaders: ""
-    # readHeaders is an optional list of headers in form `header:value`, attached to every read request.
-    # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
-    readHeaders: ""
-  vm-1:
-    writeURL: "http://victoria-metrics-victoria-metrics-cluster-vminsert.default.svc.cluster.local:8480/insert/1/prometheus/api/v1/write"
-    readURL: "http://victoria-metrics-victoria-metrics-cluster-vmselect.default.svc.cluster.local:8481/select/1/prometheus/"
+    writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=1,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=2,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=3,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=4,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=5"
