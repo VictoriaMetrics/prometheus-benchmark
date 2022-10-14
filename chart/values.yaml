@@ -1,6 +1,6 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
-vmtag: "heads-master-0-g66d81bec4-amd64"
+vmtag: "heads-public-single-node-0-g2b2c58ecf"
 
 # nodeSelector is the list of key-value pairs for selecting instances
 # where benchmark pods should be deployed.
@@ -12,7 +12,7 @@ nodeSelector:
 # to remoteStorages.
 # Every nodeexporter exposes around 815 unique metrics, so when targetsCount
 # is set to 1000, then the benchmark generates around 815*100=815K active time series.
-targetsCount: 5000
+targetsCount: 10000
 
 # scrapeInterval defines how frequently to scrape nodeexporter targets.
 # This option allows to configure data ingestion rate per every remoteStorages.
@@ -40,19 +40,19 @@ scrapeConfigUpdatePercent: 0
 # For example, if scrapeConfigUpdateInterval is set to 10m for targetsCount=1000
 # and scrapeConfigUpdatePercent=1, then around 10 targets gets updated labels every 10 minutes.
 # This generates around 815*10=8150 new time series every 10 minutes.
-scrapeConfigUpdateInterval: 10m
+scrapeConfigUpdateInterval: 1h
 
 # writeConcurrency is the number of concurrent tcp connections to use
 # for sending the data to the tested remoteStorages.
 # Increase this value if there is a high network latency between prometheus-benchmark
 # components and the tested remoteStorages.
-writeConcurrency: 20
+writeConcurrency: 50
 
 # replicas defines how many pods of writers to deploy.
 # each replica will scrape targetsCount targets and will have
 # its own extra label `replica` attached to written time series.
 # this option is useful for scaling the writers horizontally.
-writeReplicas: 20
+writeReplicas: 10
 
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
@@ -67,4 +67,6 @@ remoteStorages:
     # For example, the following urls may be used for testing VictoriaMetrics:
     # - http://<victoriametrics-addr>:8428/api/v1/write for single-node VictoriaMetrics
     # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
-    writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=1,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=2,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=3,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=4,http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/?extra_label=vm=5"
+    writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/"
+    # writeURLReplicas is the number of writeURL copies to use.
+    writeURLReplicas: 2

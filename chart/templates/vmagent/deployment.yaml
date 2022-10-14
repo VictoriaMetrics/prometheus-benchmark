@@ -18,6 +18,7 @@ spec:
   template:
     metadata:
       annotations:
+        checksum/nginx-cm: {{ include (print $.Template.BasePath "/vmagent/nginx-cm.yaml") $ | sha256sum }}
       labels:
         job: vmagent
         remote-storage-name: {{ $rsName | quote }}
@@ -40,23 +41,26 @@ spec:
       - name: vmagent
         resources:
           requests:
-            cpu: "7.5"
-            memory: "20Gi"
+            cpu: "14"
+            memory: "48Gi"
           limits:
-            cpu: "7.5"
-            memory: "20Gi"
+            cpu: "14"
+            memory: "48Gi"
         image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
         args:
         - --httpListenAddr=:8429
-        - --remoteWrite.showURL=true
+        - --remoteWrite.showURL
         - --promscrape.config=http://0.0.0.0:8436/api/v1/config
-        - --promscrape.configCheckInterval=5s
-        - --remoteWrite.url={{ $rs.writeURL }}
+        - --promscrape.configCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        {{- range $urlReplica := until ($rs.writeURLReplicas | default 1 | int) }}
+        - --remoteWrite.url={{ $rs.writeURL }}?extra_label=url_replica={{ $urlReplica }}
+        {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
         - --remoteWrite.maxDiskUsagePerURL=2GiB
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
         - --remoteWrite.label=replica={{ $replica }}
         - --promscrape.disableCompression
+        - --promscrape.noStaleMarkers
         {{- if $rs.writeBearerToken }}
         - --remoteWrite.bearerToken={{ $rs.writeBearerToken }}
         {{- end }}
@@ -69,9 +73,8 @@ spec:
         volumeMounts:
         - mountPath: /vmagent-data
           name: vmagent-data
-
       - name: nodeexporter
-        image: prom/node-exporter:v1.3.1
+        image: prom/node-exporter:v1.4.0
         args:
           - --path.procfs=/host/proc
           - --path.sysfs=/host/sys
@@ -101,7 +104,7 @@ spec:
           - containerPort: 9101
             name: metrics
       - name: nginx
-        image: nginx:1.21.6
+        image: nginx:1.23.1
         args:
           - nginx
           - -c
