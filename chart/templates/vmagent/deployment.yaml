@@ -56,7 +56,7 @@ spec:
         - --remoteWrite.url={{ $rs.writeURL }}?extra_label=url_replica={{ $urlReplica }}
         {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
-        - --remoteWrite.maxDiskUsagePerURL=2GiB
+        - --remoteWrite.maxDiskUsagePerURL=1GiB
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
         - --remoteWrite.label=replica={{ $replica }}
         - --promscrape.disableCompression

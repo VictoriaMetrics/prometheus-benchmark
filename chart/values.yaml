@@ -46,13 +46,13 @@ scrapeConfigUpdateInterval: 1h
 # for sending the data to the tested remoteStorages.
 # Increase this value if there is a high network latency between prometheus-benchmark
 # components and the tested remoteStorages.
-writeConcurrency: 200
+writeConcurrency: 100
 
 # replicas defines how many pods of writers to deploy.
 # each replica will scrape targetsCount targets and will have
 # its own extra label `replica` attached to written time series.
 # this option is useful for scaling the writers horizontally.
-writeReplicas: 10
+writeReplicas: 12
 
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
