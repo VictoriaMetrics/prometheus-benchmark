@@ -36,7 +36,7 @@ data:
           proxy_set_header Connection "";
           proxy_cache all;
           proxy_cache_lock on;
-          proxy_cache_valid 5s;
+          proxy_cache_valid 1s;
           proxy_cache_background_update on;
           proxy_cache_use_stale updating;
       }

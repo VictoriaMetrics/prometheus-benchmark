@@ -126,7 +126,8 @@ spec:
         runAsUser: 65534
       volumes:
       - name: vmagent-data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: {{ include "prometheus-benchmark.fullname" $ }}-vmagent-data-{{ $rsName }}-replica-{{ $replica }}
       - name: proc
         hostPath:
           path: /proc
