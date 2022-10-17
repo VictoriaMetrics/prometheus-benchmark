@@ -5,14 +5,14 @@ vmtag: "heads-public-single-node-0-g2b2c58ecf"
 # nodeSelector is the list of key-value pairs for selecting instances
 # where benchmark pods should be deployed.
 nodeSelector:
-  app: benchmark
+  pool: bench-100
 
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
 # to remoteStorages.
 # Every nodeexporter exposes around 815 unique metrics, so when targetsCount
 # is set to 1000, then the benchmark generates around 815*100=815K active time series.
-targetsCount: 3000
+targetsCount: 1000
 
 # scrapeInterval defines how frequently to scrape nodeexporter targets.
 # This option allows to configure data ingestion rate per every remoteStorages.
@@ -46,7 +46,7 @@ scrapeConfigUpdateInterval: 1h
 # for sending the data to the tested remoteStorages.
 # Increase this value if there is a high network latency between prometheus-benchmark
 # components and the tested remoteStorages.
-writeConcurrency: 100
+writeConcurrency: 50
 
 # replicas defines how many pods of writers to deploy.
 # each replica will scrape targetsCount targets and will have
@@ -69,4 +69,4 @@ remoteStorages:
     # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
     writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/"
     # writeURLReplicas is the number of writeURL copies to use.
-    writeURLReplicas: 12
+    writeURLReplicas: 40
