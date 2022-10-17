@@ -41,11 +41,11 @@ spec:
       - name: vmagent
         resources:
           requests:
-            cpu: "14"
-            memory: "48Gi"
+            cpu: "7.5"
+            memory: "24Gi"
           limits:
-            cpu: "14"
-            memory: "48Gi"
+            cpu: "7.5"
+            memory: "24Gi"
         image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
         args:
         - --httpListenAddr=:8429

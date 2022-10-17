@@ -13,7 +13,7 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 1000Gi
+      storage: 500Gi
 ---
 {{ end }}
 {{ end }}
