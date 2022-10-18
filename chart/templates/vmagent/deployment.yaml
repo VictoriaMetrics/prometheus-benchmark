@@ -41,11 +41,11 @@ spec:
       - name: vmagent
         resources:
           requests:
-            cpu: "7.5"
-            memory: "25Gi"
+            cpu: "7.8"
+            memory: "28Gi"
           limits:
-            cpu: "7.5"
-            memory: "25Gi"
+            cpu: "7.8"
+            memory: "28Gi"
         image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
         args:
         - --httpListenAddr=:8429
@@ -56,7 +56,7 @@ spec:
         - --remoteWrite.url={{ $rs.writeURL }}?extra_label=url_replica={{ $urlReplica }}
         {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
-        - --remoteWrite.maxDiskUsagePerURL=1GiB
+        - --remoteWrite.maxDiskUsagePerURL=100MiB
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
         - --remoteWrite.label=replica={{ $replica }}
         - --promscrape.disableCompression
@@ -126,8 +126,8 @@ spec:
         runAsUser: 65534
       volumes:
       - name: vmagent-data
-        persistentVolumeClaim:
-          claimName: {{ include "prometheus-benchmark.fullname" $ }}-vmagent-data-{{ $rsName }}-replica-{{ $replica }}
+        emptyDir:
+          medium: Memory
       - name: proc
         hostPath:
           path: /proc
