@@ -5,7 +5,7 @@ include services/vmagent-config-updater/Makefile
 NAMESPACE ?= vm-benchmark
 
 # the deployment prefix
-CHART_NAME := rw-benchmark
+CHART_NAME := bench-100
 
 # print resulting manifests to console without applying them
 debug:

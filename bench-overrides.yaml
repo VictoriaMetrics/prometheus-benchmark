@@ -7,10 +7,9 @@ writeConcurrency: 16
 writeReplicas: 16
 
 remoteStorages:
-  vmcluster:
+  vm-0:
     writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/"
     writeURLReplicas: 32
-
 
 # Total targets: 1600 * 16 * 32 = 819200
 # Total active series: 819200 * 1250 = 1 billion
