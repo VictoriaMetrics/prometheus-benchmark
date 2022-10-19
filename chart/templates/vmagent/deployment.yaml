@@ -58,7 +58,9 @@ spec:
         {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
         - --remoteWrite.maxDiskUsagePerURL=100MiB
+        {{- if $.Values.writeConcurrency }}
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
+        {{- end }}
         - --remoteWrite.label=replica={{ $replica }}
         - --promscrape.disableCompression
         - --promscrape.noStaleMarkers

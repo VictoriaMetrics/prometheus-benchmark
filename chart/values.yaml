@@ -46,7 +46,7 @@ scrapeConfigUpdateInterval: 1h
 # for sending the data to the tested remoteStorages.
 # Increase this value if there is a high network latency between prometheus-benchmark
 # components and the tested remoteStorages.
-writeConcurrency: 20
+writeConcurrency: 16
 
 # replicas defines how many pods of writers to deploy.
 # each replica will scrape targetsCount targets and will have
