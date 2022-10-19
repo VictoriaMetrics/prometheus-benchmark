@@ -2,10 +2,9 @@
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
 vmtag: "heads-public-single-node-0-gcba9696a1"
 
-# nodeSelector is the list of key-value pairs for selecting instances
+# nodeSelector is an optional key-value pairs for selecting instances
 # where benchmark pods should be deployed.
-#nodeSelector:
-#  pool: bench-100
+nodeSelector: {}
 
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
@@ -23,7 +22,7 @@ scrapeInterval: 10s
 # queryInterval is how often to send queries from files/alerts.yaml to remoteStorages.readURL
 # This option can be used for tuning read load at remoteStorages.
 # It is a good rule of thumb to keep it in sync with scrapeInterval.
-# queryInterval: 10s
+queryInterval: 10s
 
 # scrapeConfigUpdatePercent is the percent of nodeexporter targets
 # which are updated with unique label on every scrape config update

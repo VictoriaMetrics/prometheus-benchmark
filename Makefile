@@ -9,11 +9,11 @@ CHART_NAME := rw-benchmark
 
 # print resulting manifests to console without applying them
 debug:
-	helm install --dry-run --debug $(CHART_NAME) -n $(NAMESPACE) chart/
+	helm install --dry-run --debug $(CHART_NAME) -n $(NAMESPACE) chart/ -f bench-overrides.yaml
 
 # install the chart to configured namespace
 install:
-	helm upgrade -i $(CHART_NAME) -n $(NAMESPACE) --create-namespace chart/
+	helm upgrade -i $(CHART_NAME) -n $(NAMESPACE) --create-namespace chart/ -f bench-overrides.yaml
 
 # delete the chart from configured namespace
 delete:

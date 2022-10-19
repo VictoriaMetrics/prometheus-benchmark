@@ -1,0 +1,35 @@
+Data ingestion benchmark for 100 million samples/sec and 1 billion of active time series.
+
+Cluster setup:
+
+- vmstorage: 46 nodes, each 15.6vCPU, 55GB RAM, 2200GB HDD-based persistent disk
+- vminsert: 18 nodes, each 15.6vCPU, 55GB RAM
+- vmselect: none
+
+Total resources:
+- vmstorage: 717.6vCPU, 2.53TB RAM, 100TB disk
+- vminsert: 280.8vCPU, 1TB RAM
+
+32 Kubernetes nodes: e2-standard-32, autoscaling node pool
+
+Total: 1024vCPU, 4TB RAM, 100TB disk
+
+Resource usage during the benchmark:
+
+- vmstorage: 510vCPU avg, 600GB RAM avg
+- vminsert: 206vCPU avg, 26GB RAM avg
+- disk IO: 3GB/s write avg, 400 MB/s read avg
+- network: 140gbit/s avg
+
+Benchmark stats:
+- scrape targets (node_exporter v1.4.0): 820K
+- active time series: 1 billion
+- data ingestion rate: 100 million samples/sec
+- total datapoints stored: 100M*3600*24=8.64 trillions
+- disk space usage:
+- the average sample size: 
+
+Specific tuning:
+
+- vminsert:
+  - add -rpc.disableCompression option in order to reduce CPU usage at the cost of higher network usage

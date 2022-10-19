@@ -1,0 +1,17 @@
+vmtag: "heads-public-single-node-0-gcba9696a1"
+targetsCount: 1600
+scrapeInterval: 10s
+scrapeConfigUpdatePercent: 0
+scrapeConfigUpdateInterval: 1h
+writeConcurrency: 16
+writeReplicas: 16
+
+remoteStorages:
+  vmcluster:
+    writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/"
+    writeURLReplicas: 32
+
+
+# Total targets: 1600 * 16 * 32 = 819200
+# Total active series: 819200 * 1250 = 1 billion
+# Ingestion rate: 1billion / 10s = 100M metrics/sec
