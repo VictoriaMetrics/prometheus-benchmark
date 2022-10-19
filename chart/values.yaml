@@ -1,11 +1,11 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
-vmtag: "heads-public-single-node-0-g2b2c58ecf"
+vmtag: "heads-public-single-node-0-gcba9696a1"
 
 # nodeSelector is the list of key-value pairs for selecting instances
 # where benchmark pods should be deployed.
-nodeSelector:
-  pool: bench-100
+#nodeSelector:
+#  pool: bench-100
 
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
@@ -52,7 +52,7 @@ writeConcurrency: 50
 # each replica will scrape targetsCount targets and will have
 # its own extra label `replica` attached to written time series.
 # this option is useful for scaling the writers horizontally.
-writeReplicas: 20
+writeReplicas: 8
 
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
@@ -69,4 +69,4 @@ remoteStorages:
     # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
     writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/"
     # writeURLReplicas is the number of writeURL copies to use.
-    writeURLReplicas: 40
+    writeURLReplicas: 30
