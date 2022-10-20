@@ -54,7 +54,15 @@ writeConcurrency: 0
 # its own extra `replica` label attached to time series stored to remote storage.
 # This option is useful for scaling the writers horizontally.
 # See also writeURLReplicas option.
-writeReplicas: 0
+writeReplicas: 1
+
+# writeReplicaMem is the memory limit per each pod writer.
+# See writeReplicas option.
+writeReplicaMem: "4Gi"
+
+# writeReplicaCPU is the CPU limit per each pod writer.
+# See writeReplicas option.
+writeReplicaCPU: 2
 
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
@@ -76,7 +84,7 @@ remoteStorages:
     # This option can be used for increasing the number of active time series
     # to send to writeURL.
     # See also writeReplicas option.
-    writeURLReplicas: 0
+    writeURLReplicas: 1
     # readURL is an optional url when query performance needs to be tested.
     # The query performance is tested by sending alerting queries from files/alerts.yaml
     # to readURL.

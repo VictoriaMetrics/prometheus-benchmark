@@ -5,6 +5,8 @@ scrapeConfigUpdatePercent: 0
 scrapeConfigUpdateInterval: 1h
 writeConcurrency: 16
 writeReplicas: 16
+writeReplicaMem: "25Gi"
+writeReplicaCPU: "7.8"
 
 remoteStorages:
   vm-0:
