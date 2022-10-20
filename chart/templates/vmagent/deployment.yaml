@@ -18,6 +18,7 @@ spec:
   template:
     metadata:
       annotations:
+        checksum/nginx-cm: {{ include (print $.Template.BasePath "/vmagent/nginx-cm.yaml") $ | sha256sum }}
       labels:
         job: vmagent
         remote-storage-name: {{ $rsName | quote }}
@@ -33,22 +34,35 @@ spec:
         args:
         - --httpListenAddr=:8436
         - --targetsCount={{ $.Values.targetsCount }}
-        - --targetAddr={{ printf "%s-nodeexporter.%s.svc:9102" (include "prometheus-benchmark.fullname" $) $.Release.Namespace }}
+        - --targetAddr=http://0.0.0.0:9102
         - --scrapeInterval={{ $.Values.scrapeInterval }}
         - --scrapeConfigUpdatePercent={{ $.Values.scrapeConfigUpdatePercent }}
         - --scrapeConfigUpdateInterval={{ $.Values.scrapeConfigUpdateInterval }}
       - name: vmagent
+        resources:
+          requests:
+            cpu: {{ $.Values.writeReplicaCPU }}
+            memory: {{ $.Values.writeReplicaMem }}
+          limits:
+            cpu: {{ $.Values.writeReplicaCPU }}
+            memory: {{ $.Values.writeReplicaMem }}
         image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
         args:
         - --httpListenAddr=:8429
-        - --remoteWrite.showURL=true
+        - --remoteWrite.showURL
         - --promscrape.config=http://0.0.0.0:8436/api/v1/config
-        - --promscrape.configCheckInterval=1s
-        - --remoteWrite.url={{ $rs.writeURL }}
+        - --promscrape.configCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        {{- range $urlReplica := until ($rs.writeURLReplicas | default 1 | int) }}
+        - --remoteWrite.url={{ $rs.writeURL }}?extra_label=url_replica={{ $urlReplica }}
+        {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
-        - --remoteWrite.maxDiskUsagePerURL=2GiB
+        - --remoteWrite.maxDiskUsagePerURL=100MiB
+        {{- if $.Values.writeConcurrency }}
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
+        {{- end }}
         - --remoteWrite.label=replica={{ $replica }}
+        - --promscrape.disableCompression
+        - --promscrape.noStaleMarkers
         {{- if $rs.writeBearerToken }}
         - --remoteWrite.bearerToken={{ $rs.writeBearerToken }}
         {{- end }}
@@ -61,8 +75,76 @@ spec:
         volumeMounts:
         - mountPath: /vmagent-data
           name: vmagent-data
+      - name: nodeexporter
+        image: prom/node-exporter:v1.4.0
+        args:
+          - --path.procfs=/host/proc
+          - --path.sysfs=/host/sys
+          - --path.rootfs=/host/root
+          - --no-collector.wifi
+          - --no-collector.hwmon
+          - --no-collector.time
+          - --no-collector.timex
+          - --no-collector.arp
+          - --no-collector.netdev
+          - --no-collector.netstat
+          - --collector.processes
+          - --web.max-requests=40
+          - --web.listen-address=:9101
+        volumeMounts:
+          - name: proc
+            mountPath: /host/proc
+            readOnly: true
+          - name: sys
+            mountPath: /host/sys
+            readOnly: true
+          - name: root
+            mountPath: /host/root
+            mountPropagation: HostToContainer
+            readOnly: true
+        ports:
+          - containerPort: 9101
+            name: metrics
+      - name: nginx
+        image: nginx:1.23.1
+        args:
+          - nginx
+          - -c
+          - /opt/nginx/nginx.conf
+        ports:
+          - containerPort: 9102
+            name: nginx
+        volumeMounts:
+          - mountPath: /opt/nginx
+            name: nginx-cm
+          - mountPath: /tmp/nginx
+            name: nginx-cache
+          - mountPath: /etc/nginx
+            name: nginx-empty
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
       volumes:
       - name: vmagent-data
+        emptyDir:
+          medium: Memory
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: root
+        hostPath:
+          path: /
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-cm
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" $ }}-nginx-cm
+      - name: nginx-empty
         emptyDir: {}
 ---
 {{ end }}
