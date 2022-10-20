@@ -25,9 +25,9 @@ Benchmark stats:
 - scrape targets (node_exporter v1.4.0): 820K
 - active time series: 1 billion
 - data ingestion rate: 100 million samples/sec
-- total datapoints stored: 100M*3600*24=8.64 trillions
-- disk space usage:
-- the average sample size: 
+- total datapoints stored: 8.77 trillions
+- disk space usage: 7.48TB
+- the average sample size: 0.9 bytes
 
 Specific tuning:
 
