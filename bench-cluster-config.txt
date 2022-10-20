@@ -18,7 +18,7 @@ Resource usage during the benchmark:
 
 - vmstorage: 510vCPU avg, 600GB RAM avg
 - vminsert: 206vCPU avg, 26GB RAM avg
-- disk IO: 3GB/s write avg, 400 MB/s read avg
+- disk IO: 3GB/s write avg, 450 MB/s read avg
 - network: 140gbit/s avg
 
 Benchmark stats:
