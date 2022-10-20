@@ -9,7 +9,7 @@ writeReplicaMem: "25Gi"
 writeReplicaCPU: "7.8"
 
 remoteStorages:
-  vm-0:
+  vm:
     writeURL: "http://victoria-metrics-cluster-vminsert.vm-benchmark.svc.cluster.local:8480/insert/0/prometheus/"
     writeURLReplicas: 32
 
