@@ -71,7 +71,7 @@ writeReplicaCPU: 2
 remoteStorages:
   # the name of the remote storage to test.
   # The name is added to remote_storage_name label at collected metrics
-  vm-0:
+  vm:
     # writeURL should contain the url, which accepts Prometheus remote_write
     # protocol at the tested remote storage.
     # For example, the following urls may be used for testing VictoriaMetrics:
