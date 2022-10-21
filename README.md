@@ -31,7 +31,7 @@ The following systems can be tested with prometheus-benchmark:
   - [How to query data from Cortex](https://cortexmetrics.io/docs/api/#instant-query)
 - [Thanos](https://github.com/thanos-io/thanos/):
   - [How to push data to Thanos](https://thanos.io/tip/components/receive.md/)
-  - [How t oquery data from Thanos](https://thanos.io/tip/components/query.md/)
+  - [How to query data from Thanos](https://thanos.io/tip/components/query.md/)
 
 ## How does it work?
 
