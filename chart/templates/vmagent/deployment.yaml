@@ -34,7 +34,7 @@ spec:
         args:
         - --httpListenAddr=:8436
         - --targetsCount={{ $.Values.targetsCount }}
-        - --targetAddr=http://0.0.0.0:9102
+        - --targetAddr=0.0.0.0:9102
         - --scrapeInterval={{ $.Values.scrapeInterval }}
         - --scrapeConfigUpdatePercent={{ $.Values.scrapeConfigUpdatePercent }}
         - --scrapeConfigUpdateInterval={{ $.Values.scrapeConfigUpdateInterval }}
