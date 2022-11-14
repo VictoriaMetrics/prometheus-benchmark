@@ -1,4 +1,4 @@
-vmtag: "heads-public-single-node-0-gcba9696a1"
+vmtag: "v1.83.1"
 targetsCount: 1600
 scrapeInterval: 10s
 scrapeConfigUpdatePercent: 0
