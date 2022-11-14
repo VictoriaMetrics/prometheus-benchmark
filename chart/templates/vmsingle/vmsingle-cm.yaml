@@ -15,7 +15,12 @@ data:
       - role: pod
         namespaces:
           own_namespace: true
+        selectors:
+        - role: pod
+          label: 'chart-name={{ include "prometheus-benchmark.fullname" . }}'
       relabel_configs:
+      - if: '{__meta_kubernetes_pod_container_port_name="metrics"}'
+        action: keep
       - action: labelmap
         regex: "__meta_kubernetes_pod_label_(.+)"
       - action: labeldrop
