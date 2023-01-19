@@ -41,6 +41,8 @@ These systems must support [Prometheus remote_write API](https://prometheus.io/d
 for measuring data ingestion performance. Optionally these systems may support
 [Prometheus querying API](https://prometheus.io/docs/prometheus/latest/querying/api/#instant-queries) for measuring query performance.
 
+<img src="prometheus-benchmark-architecture.excalidraw.png" width="600" alt="Benchmark architecture">
+
 The helm chart deploys the following pods:
 
 - `vmagent` with the following containers:
@@ -63,6 +65,7 @@ The helm chart deploys the following pods:
 ## Articles
 
 [Benchmarking Prometheus-compatible time series databases](https://victoriametrics.com/blog/remote-write-benchmark/).
+[Monitoring benchmark: how to generate 100 million samples/s of production-like data](https://victoriametrics.com/blog/benchmark-100m/).
 
 ## How to run
 
