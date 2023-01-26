@@ -79,10 +79,10 @@ remoteStorages:
     # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
     writeURL: "http://victoria-metrics-victoria-metrics-cluster-vminsert.default.svc.cluster.local:8480/insert/0/prometheus/api/v1/write"
     # writeURLReplicas is an optional number of writeURL replicas to send data to.
-    # An unique `url_replica` label is added to every writeURL replica via `extra_label` query arg
+    # A unique `url_replica` label is added to every writeURL replica via `extra_label` query arg
     # in order to generate unique time series.
     # This option can be used for increasing the number of active time series
-    # to send to writeURL.
+    # to send to writeURL. Please note, `extra_label` feature is supported only by VictoriaMetrics servers.
     # See also writeReplicas option.
     writeURLReplicas: 1
     # readURL is an optional url when query performance needs to be tested.
