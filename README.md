@@ -5,10 +5,10 @@ for Prometheus-compatible systems on production-like workload.
 
 Prometheus-benchmark provides the following features:
 
-- It generates production-like worlkoad for both data ingestion and querying paths:
+- It generates production-like workload for both data ingestion and querying paths:
   - It generates write workload from real [node_exporter](https://github.com/prometheus/node_exporter) metrics.
     This is the most frequently used exporter for Prometheus metrics.
-  - It generates read workload from typical alering rules for `node_exporter` metrics - see [chart/files/alerts.yaml](chart/files/alerts.yaml).
+  - It generates read workload from typical alerting rules for `node_exporter` metrics - see [chart/files/alerts.yaml](chart/files/alerts.yaml).
 - It allows generating [time series churn rate](https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate)
   via [scrapeConfigUpdatePercent](https://github.com/VictoriaMetrics/prometheus-benchmark/blob/f6a69052413618c607758d5469e43e508792aff7/chart/values.yaml#L30)
   and [scrapeConfigUpdateInterval](https://github.com/VictoriaMetrics/prometheus-benchmark/blob/f6a69052413618c607758d5469e43e508792aff7/chart/values.yaml#L38)
@@ -64,8 +64,8 @@ The helm chart deploys the following pods:
 
 ## Articles
 
-[Benchmarking Prometheus-compatible time series databases](https://victoriametrics.com/blog/remote-write-benchmark/).
-[Monitoring benchmark: how to generate 100 million samples/s of production-like data](https://victoriametrics.com/blog/benchmark-100m/).
+- [Benchmarking Prometheus-compatible time series databases](https://victoriametrics.com/blog/remote-write-benchmark/)
+- [Monitoring benchmark: how to generate 100 million samples/s of production-like data](https://victoriametrics.com/blog/benchmark-100m/)
 
 ## How to run
 
@@ -83,7 +83,7 @@ Then edit the [chart/values.yaml](chart/values.yaml) with the desired config par
 Then optionally edit the [chart/files/alerts.yaml](chart/files/alerts.yaml)
 with the desired queries to execute at remote storage systems.
 Then run the following command in order to install the prometheus-benchmark
-components in Kuberntes and start the benchmark:
+components in Kubernetes and start the benchmark:
 
 ```bash
 make install
@@ -98,14 +98,14 @@ make monitor
 After that go to `http://localhost:8428/targets` in order to see which metrics are collected by the benchmark.
 See [monitoring docs](#monitoring) for details.
 
-After the benchmark is complete, run the following command for removing prometheus-benchmark components from Kuberntes:
+After the benchmark is complete, run the following command for removing prometheus-benchmark components from Kubernetes:
 
 ```bash
 make delete
 ```
 
 By default the `prometheus-benchmark` is deployed in `vm-benchmark` Kubernetes namespace.
-The namespace can be overriden via `NAMESPACE` environment variable.
+The namespace can be overridden via `NAMESPACE` environment variable.
 For example, the following command starts the `prometheus-benchmark` chart in `foobar` k8s namespace:
 
 ```bash
