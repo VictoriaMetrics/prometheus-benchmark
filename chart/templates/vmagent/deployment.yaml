@@ -44,7 +44,6 @@ spec:
             cpu: {{ $.Values.writeReplicaCPU }}
             memory: {{ $.Values.writeReplicaMem }}
           limits:
-            cpu: {{ $.Values.writeReplicaCPU }}
             memory: {{ $.Values.writeReplicaMem }}
         image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
         args:
