@@ -102,3 +102,7 @@ remoteStorages:
     # readHeaders is an optional list of headers in form `header:value`, attached to every read request.
     # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
     readHeaders: ""
+    # vmagentExtraFlags allows to pass additional flags to vmagent.
+    vmagentExtraFlags: []
+    # - "--remoteWrite.useVMProto=true"
+
