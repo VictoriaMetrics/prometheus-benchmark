@@ -68,6 +68,9 @@ spec:
         {{- if $rs.writeHeaders }}
         - --remoteWrite.headers={{ $rs.writeHeaders }}
         {{- end }}
+        {{- range $rs.vmagentExtraFlags }}
+        - {{ . }}
+        {{- end }}
         ports:
         - name: metrics
           containerPort: 8429
