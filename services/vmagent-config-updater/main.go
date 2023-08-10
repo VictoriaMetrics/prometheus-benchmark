@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -19,6 +20,12 @@ var (
 	scrapeInterval             = flag.Duration("scrapeInterval", time.Second*5, "The scrape_interval to set at the scrape config returned from -httpListenAddr")
 	scrapeConfigUpdateInterval = flag.Duration("scrapeConfigUpdateInterval", time.Minute*10, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr every -scrapeConfigUpdateInterval")
 	scrapeConfigUpdatePercent  = flag.Float64("scrapeConfigUpdatePercent", 1, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr ever -scrapeConfigUpdateInterval")
+	configMode                 = flag.String("configMode", configModeScrapeConfig, "Supported")
+)
+
+const (
+	configModeScrapeConfig = "scrape_config"
+	configModeHTTPSD       = "http_sd_config"
 )
 
 func main() {
@@ -47,12 +54,25 @@ func main() {
 			cLock.Unlock()
 		}
 	}()
-	rh := func(w http.ResponseWriter, r *http.Request) {
-		cLock.Lock()
-		data := c.marshalYAML()
-		cLock.Unlock()
-		w.Header().Set("Content-Type", "text/yaml")
-		w.Write(data)
+
+	var rh func(w http.ResponseWriter, r *http.Request)
+	switch *configMode {
+	case configModeScrapeConfig:
+		rh = func(w http.ResponseWriter, r *http.Request) {
+			cLock.Lock()
+			data := c.marshalYAML()
+			cLock.Unlock()
+			w.Header().Set("Content-Type", "text/yaml")
+			w.Write(data)
+		}
+	case configModeHTTPSD:
+		rh = func(w http.ResponseWriter, r *http.Request) {
+			cLock.Lock()
+			data := c.marshalHTTPSD()
+			cLock.Unlock()
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(data)
+		}
 	}
 	hf := http.HandlerFunc(rh)
 	log.Printf("starting scrape config updater at http://%s/", *listenAddr)
@@ -65,6 +85,14 @@ func (c *config) marshalYAML() []byte {
 	data, err := yaml.Marshal(c)
 	if err != nil {
 		log.Fatalf("BUG: unexpected error when marshaling config: %s", err)
+	}
+	return data
+}
+
+func (c *config) marshalHTTPSD() []byte {
+	data, err := json.Marshal(c.ScrapeConfigs[0].StaticConfigs)
+	if err != nil {
+		log.Fatalf("BUG: unexpected error when marshaling config for http_sd: %s", err)
 	}
 	return data
 }
@@ -118,6 +146,6 @@ type scrapeConfig struct {
 //
 // See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#static_config
 type staticConfig struct {
-	Targets []string          `yaml:"targets"`
-	Labels  map[string]string `yaml:"labels"`
+	Targets []string          `yaml:"targets" json:"targets"`
+	Labels  map[string]string `yaml:"labels" json:"labels"`
 }
