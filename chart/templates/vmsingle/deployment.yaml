@@ -40,6 +40,13 @@ spec:
           mountPath: /config
         - name: data
           mountPath: /data
+        resources:
+          limits:
+            cpu: {{ .Values.cpu }}
+            memory: {{ .Values.memory }}
+          requests:
+            cpu: {{ .Values.cpu }}
+            memory: {{ .Values.memory }}
       volumes:
       - name: config
         configMap:

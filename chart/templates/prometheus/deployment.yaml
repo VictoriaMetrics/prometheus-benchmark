@@ -42,6 +42,13 @@ spec:
           mountPath: /config
         - name: data
           mountPath: /data
+        resources:
+          limits:
+            cpu: {{ .Values.cpu }}
+            memory: {{ .Values.memory }}
+          requests:
+            cpu: {{ .Values.cpu }}
+            memory: {{ .Values.memory }}
       securityContext:
         fsGroup: 65534
         runAsGroup: 65534
