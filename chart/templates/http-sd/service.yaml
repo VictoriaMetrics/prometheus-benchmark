@@ -1,0 +1,19 @@
+{{ range $replica := until ($.Values.writeReplicas | default 1 | int) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prometheus-benchmark.fullname" $ }}-http-sd-replica-{{ $replica }}
+spec:
+  selector:
+    matchLabels:
+      job: http-sd
+      replica: {{ $replica }}
+      {{- include "prometheus-benchmark.selectorLabels" $ | nindent 6 }}
+  clusterIP: None
+  ports:
+  - name: nginx
+    port: 9102
+  - name: http-sd
+    port: 8432
+---
+{{ end }}

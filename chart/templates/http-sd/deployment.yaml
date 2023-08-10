@@ -1,28 +1,26 @@
-{{ if .Values.vmagent.enabled }}
-{{ range $rsName, $rs := .Values.remoteStorages }}
 {{ range $replica := until ($.Values.writeReplicas | default 1 | int) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" $ }}-vmagent-{{ $rsName }}-replica-{{ $replica }}
+  name: {{ include "prometheus-benchmark.fullname" $ }}-http-sd-replica-{{ $replica }}
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      job: vmagent
-      remote-storage-name: {{ $rsName | quote }}
+      job: http-sd
+      replica: {{ $replica }}
       {{- include "prometheus-benchmark.selectorLabels" $ | nindent 6 }}
   strategy:
     type: Recreate
   template:
     metadata:
       annotations:
-        checksum/nginx-cm: {{ include (print $.Template.BasePath "/vmagent/nginx-cm.yaml") $ | sha256sum }}
+        checksum/nginx-cm: {{ include (print $.Template.BasePath "/http-sd/nginx-cm.yaml") $ | sha256sum }}
       labels:
-        job: vmagent
-        remote-storage-name: {{ $rsName | quote }}
+        job: http-sd
+        replica: {{ $replica }}
         {{- include "prometheus-benchmark.labels" $ | nindent 8 }}
     spec:
       {{- with $.Values.nodeSelector }}
@@ -30,56 +28,21 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: vmagent-config-updater
-        image: "victoriametrics/vmagent-config-updater:v1.1.0"
+      - name: http-sd
+        image: "victoriametrics/vmagent-config-updater:heads-scrape-benchmark-0-gfab269c"
         args:
         - --httpListenAddr=:8436
+        - --configMode=http_sd_config
         - --targetsCount={{ $.Values.targetsCount }}
-        - --targetAddr=0.0.0.0:9102
+        - --targetAddr={{ include "prometheus-benchmark.fullname" $ }}-http-sd-replica-{{ $replica }}:9102
         - --scrapeInterval={{ $.Values.scrapeInterval }}
         - --scrapeConfigUpdatePercent={{ $.Values.scrapeConfigUpdatePercent }}
         - --scrapeConfigUpdateInterval={{ $.Values.scrapeConfigUpdateInterval }}
-      - name: vmagent
-        resources:
-          requests:
-            cpu: {{ $.Values.writeReplicaCPU }}
-            memory: {{ $.Values.writeReplicaMem }}
-          limits:
-            memory: {{ $.Values.writeReplicaMem }}
-        image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
-        args:
-        - --httpListenAddr=:8429
-        - --remoteWrite.showURL
-        - --promscrape.config=http://0.0.0.0:8436/api/v1/config
-        - --promscrape.configCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
-        {{- range $urlReplica := until ($rs.writeURLReplicas | default 1 | int) }}
-        - --remoteWrite.url={{ $rs.writeURL }}?extra_label=url_replica={{ $urlReplica }}
-        {{- end }}
-        - --remoteWrite.tmpDataPath=/vmagent-data
-        - --remoteWrite.maxDiskUsagePerURL=100MiB
-        {{- if $.Values.writeConcurrency }}
-        - --remoteWrite.queues={{ $.Values.writeConcurrency }}
-        {{- end }}
-        - --remoteWrite.label=replica={{ $replica }}
-        - --promscrape.disableCompression
-        - --promscrape.noStaleMarkers
-        {{- if $rs.writeBearerToken }}
-        - --remoteWrite.bearerToken={{ $rs.writeBearerToken }}
-        {{- end }}
-        {{- if $rs.writeHeaders }}
-        - --remoteWrite.headers={{ $rs.writeHeaders }}
-        {{- end }}
-        {{- range $rs.vmagentExtraFlags }}
-        - {{ . }}
-        {{- end }}
         ports:
-        - name: metrics
-          containerPort: 8429
-        volumeMounts:
-        - mountPath: /vmagent-data
-          name: vmagent-data
+          - containerPort: 8436
+            name: http-sd    
       - name: nodeexporter
-        image: prom/node-exporter:v1.4.0
+        image: prom/node-exporter:v1.6.1
         args:
           - --path.procfs=/host/proc
           - --path.sysfs=/host/sys
@@ -130,9 +93,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 65534
       volumes:
-      - name: vmagent-data
-        emptyDir:
-          medium: Memory
       - name: proc
         hostPath:
           path: /proc
@@ -150,6 +110,4 @@ spec:
       - name: nginx-empty
         emptyDir: {}
 ---
-{{ end }}
-{{ end }}
 {{ end }}

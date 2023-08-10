@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-benchmark.fullname" . }}-prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      job: prometheus
+      {{- include "prometheus-benchmark.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/prometheus-cm: {{ include (print .Template.BasePath "/prometheus/prometheus-cm.yaml") . | sha256sum }}
+      labels:
+        job: prometheus
+        {{- include "prometheus-benchmark.labels" . | nindent 8 }}
+    spec:
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: prometheus-server
+        image: "quay.io/prometheus/prometheus:v2.46.0"
+        args:
+        - --storage.tsdb.retention.time=15d
+        - --config.file=/config/scrape.yml
+        - --storage.tsdb.path=/data
+        - --web.console.libraries=/etc/prometheus/console_libraries
+        - --web.console.templates=/etc/prometheus/consoles
+        - --web.enable-lifecycle
+        ports:
+        - name: metrics
+          containerPort: 9090
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: data
+          mountPath: /data
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" . }}-prometheus-cm
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "prometheus-benchmark.fullname" . }}-prometheus-data
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true

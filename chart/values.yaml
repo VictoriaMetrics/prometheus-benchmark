@@ -106,3 +106,5 @@ remoteStorages:
     vmagentExtraFlags: []
     # - "--remoteWrite.useVMProto=true"
 
+vmagent: 
+  enabled: false

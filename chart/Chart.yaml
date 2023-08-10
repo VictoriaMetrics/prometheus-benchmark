@@ -2,5 +2,5 @@ apiVersion: v2
 name: prometheus-benchmark
 description: A Helm chart for Prometheus benchmark
 type: application
-version: 0.2.0
+version: 0.3.0
 appVersion: "1.17.0"

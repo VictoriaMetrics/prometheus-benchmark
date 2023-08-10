@@ -1,29 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle
+  name: {{ include "prometheus-benchmark.fullname" . }}-monitoring
   namespace: {{ .Release.Namespace }}
   labels:
+    job: monitoring
     {{- include "prometheus-benchmark.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      job: vmsingle
+      job: monitoring
       {{- include "prometheus-benchmark.selectorLabels" . | nindent 6 }}
   strategy:
     type: Recreate
   template:
     metadata:
       annotations:
-        checksum/vmsingle-cm: {{ include (print .Template.BasePath "/vmsingle/vmsingle-cm.yaml") . | sha256sum }}
+        checksum/monitoring-cm: {{ include (print .Template.BasePath "/monitoring/monitoring-cm.yaml") . | sha256sum }}
       labels:
-        job: vmsingle
+        job: monitoring
         {{- include "prometheus-benchmark.labels" . | nindent 8 }}
     spec:
       {{- with $.Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      serviceAccount: {{ include "prometheus-benchmark.fullname" . }}-monitoring
       containers:
       - name: vmsingle
         image: "victoriametrics/victoria-metrics:{{ .Values.vmtag }}"
@@ -31,6 +33,7 @@ spec:
         - --httpListenAddr=:8428
         - --promscrape.config=/config/scrape.yml
         - --storageDataPath=/data
+        - --promscrape.kubernetesSDCheckInterval=5s
         ports:
         - name: metrics
           containerPort: 8428
@@ -42,7 +45,7 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-cm
+          name: {{ include "prometheus-benchmark.fullname" . }}-monitoring-cm
       - name: data
         persistentVolumeClaim:
-          claimName: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-data
+          claimName: {{ include "prometheus-benchmark.fullname" . }}-monitoring-data
