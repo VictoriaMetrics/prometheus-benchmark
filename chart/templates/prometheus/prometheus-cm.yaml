@@ -8,7 +8,7 @@ metadata:
 data:
   scrape.yml: |
     global:
-      scrape_interval: 5s
+      scrape_interval: {{ $.Values.scrapeInterval }}
     scrape_configs:
 {{- range $replica := until ($.Values.writeReplicas | default 1 | int) }}
     - job_name: http-sd-{{ $replica }}
