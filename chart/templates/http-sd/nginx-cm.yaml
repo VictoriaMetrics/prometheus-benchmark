@@ -25,7 +25,7 @@ data:
         keepalive 1000;
       }
       server {
-        listen 127.0.0.1:9102;
+        listen 0.0.0.0:9102;
         server_name foo;
         access_log off;
         error_log off;

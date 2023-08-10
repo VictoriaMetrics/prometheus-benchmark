@@ -54,7 +54,3 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: {{ include "prometheus-benchmark.fullname" . }}-prometheus-data
-      securityContext:
-        fsGroup: 65534
-        runAsGroup: 65534
-        runAsNonRoot: true

@@ -13,6 +13,5 @@ data:
 {{- range $replica := until ($.Values.writeReplicas | default 1 | int) }}
     - job_name: http-sd-{{ $replica }}
       http_sd_configs:
-      - url: {{ include "prometheus-benchmark.fullname" $ }}-http-sd-replica-{{ $replica }}:8436
-        refresh_interval: {{ $.Values.scrapeConfigUpdateInterval }}
+      - url: http://{{ include "prometheus-benchmark.fullname" $ }}-http-sd-replica-{{ $replica }}:8436
 {{- end }}

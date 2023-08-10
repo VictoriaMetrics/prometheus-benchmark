@@ -5,10 +5,9 @@ metadata:
   name: {{ include "prometheus-benchmark.fullname" $ }}-http-sd-replica-{{ $replica }}
 spec:
   selector:
-    matchLabels:
-      job: http-sd
-      replica: {{ $replica }}
-      {{- include "prometheus-benchmark.selectorLabels" $ | nindent 6 }}
+    job: http-sd
+    replica: {{ $replica | quote }}
+    {{- include "prometheus-benchmark.selectorLabels" $ | nindent 4 }}
   clusterIP: None
   ports:
   - name: nginx

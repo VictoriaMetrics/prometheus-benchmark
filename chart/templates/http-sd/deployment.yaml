@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       job: http-sd
-      replica: {{ $replica }}
+      replica: {{ $replica | quote }}
       {{- include "prometheus-benchmark.selectorLabels" $ | nindent 6 }}
   strategy:
     type: Recreate
@@ -20,7 +20,7 @@ spec:
         checksum/nginx-cm: {{ include (print $.Template.BasePath "/http-sd/nginx-cm.yaml") $ | sha256sum }}
       labels:
         job: http-sd
-        replica: {{ $replica }}
+        replica: {{ $replica | quote }}
         {{- include "prometheus-benchmark.labels" $ | nindent 8 }}
     spec:
       {{- with $.Values.nodeSelector }}

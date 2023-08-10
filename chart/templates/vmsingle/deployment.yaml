@@ -31,6 +31,7 @@ spec:
         - --httpListenAddr=:8428
         - --promscrape.config=/config/scrape.yml
         - --storageDataPath=/data
+        - --promscrape.httpSDCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
         ports:
         - name: metrics
           containerPort: 8428
