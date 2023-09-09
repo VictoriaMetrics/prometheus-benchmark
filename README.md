@@ -1,5 +1,19 @@
 # Prometheus benchmark
 
+Please note, this is an experimental branch for comparing performance of 
+VictoriaMetrics single-node and Prometheus instances during scraping and querying. 
+The original version of the benchmark is available in [main branch](https://github.com/VictoriaMetrics/prometheus-benchmark).
+
+The architecture of the benchmark is different to the architecture in `main` branch
+and is reflected on the pic below:
+
+<img src="prometheus-vs-vm-benchmark-architecture.png" width="600" alt="Benchmark architecture">
+
+Please see [chart/values.yaml](chart/values.yaml) for settings used for this test. 
+To install the benchmark see [how to run](#how-to-run) docs.
+
+------------------------------
+
 Prometheus-benchmark allows testing data ingestion and querying performance
 for Prometheus-compatible systems on production-like workload.
 

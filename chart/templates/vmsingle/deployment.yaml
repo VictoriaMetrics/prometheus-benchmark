@@ -32,6 +32,7 @@ spec:
         - --promscrape.config=/config/scrape.yml
         - --storageDataPath=/data
         - --promscrape.httpSDCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        - --search.maxUniqueTimeseries=10000000
         ports:
         - name: metrics
           containerPort: 8428
