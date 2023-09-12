@@ -66,7 +66,7 @@ The helm chart deploys the following pods:
 
 - [Benchmarking Prometheus-compatible time series databases](https://victoriametrics.com/blog/remote-write-benchmark/)
 - [Monitoring benchmark: how to generate 100 million samples/s of production-like data](https://victoriametrics.com/blog/benchmark-100m/)
-- [Grafana Mimir and VictoriaMetrics: performance tests]https://victoriametrics.com/blog/mimir-benchmark/)
+- [Grafana Mimir and VictoriaMetrics: performance tests](https://victoriametrics.com/blog/mimir-benchmark/)
 
 ## How to run
 
