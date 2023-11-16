@@ -38,6 +38,7 @@ spec:
         - --rule=/config/alerts.yml
         - --evaluationInterval={{ $.Values.queryInterval }}
         - --datasource.url={{ $rs.readURL }}
+        - --datasource.disableKeepAlive
         {{- if $rs.readBearerToken }}
         - --datasource.bearerToken={{ $rs.readBearerToken }}
         {{- end }}
