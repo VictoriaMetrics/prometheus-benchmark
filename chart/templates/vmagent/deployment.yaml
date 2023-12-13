@@ -91,7 +91,7 @@ spec:
           - --no-collector.netdev
           - --no-collector.netstat
           - --collector.processes
-          - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+          - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+|run/containerd/.+|home/kubernetes/.+)($|/)
           - --web.max-requests=40
           - --web.listen-address=:9101
         volumeMounts:
