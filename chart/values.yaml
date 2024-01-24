@@ -64,6 +64,11 @@ writeReplicaMem: "4Gi"
 # See writeReplicas option.
 writeReplicaCPU: 2
 
+# disableReplicaLabel is an optional flag to disable `replica` label on vmagent replicas.
+# This option is useful for testing HA mode of vmagents when all replicas scrape the same targets
+# and push data to the same remote storage with deduplication enabled.
+disableReplicaLabel: true
+
 # remoteStorages contains a named list of Prometheus-compatible systems to test.
 # These systems must support data ingestion via Prometheus remote_write protocol.
 # These systems must also support Prometheus querying API if query performance

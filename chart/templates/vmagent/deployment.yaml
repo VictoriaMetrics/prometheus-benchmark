@@ -59,7 +59,9 @@ spec:
         {{- if $.Values.writeConcurrency }}
         - --remoteWrite.queues={{ $.Values.writeConcurrency }}
         {{- end }}
+        {{- if not ($.Values.disableReplicaLabel | default false ) }}
         - --remoteWrite.label=replica={{ $replica }}
+        {{- end }}
         - --promscrape.disableCompression
         - --promscrape.noStaleMarkers
         {{- if $rs.writeBearerToken }}
