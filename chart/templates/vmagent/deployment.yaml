@@ -83,13 +83,10 @@ spec:
           - --path.procfs=/host/proc
           - --path.sysfs=/host/sys
           - --path.rootfs=/host/root
+          # Note that disabled collectors are in sync with the alerting rules
+          # When disabling a collector make sure to disable the related alerting rule
           - --no-collector.wifi
-          - --no-collector.hwmon
-          - --no-collector.time
-          - --no-collector.timex
           - --no-collector.arp
-          - --no-collector.netdev
-          - --no-collector.netstat
           - --collector.processes
           - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+|run/containerd/.+|home/kubernetes/.+)($|/)
           - --web.max-requests=40
