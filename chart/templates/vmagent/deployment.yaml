@@ -83,6 +83,8 @@ spec:
           - --path.procfs=/host/proc
           - --path.sysfs=/host/sys
           - --path.rootfs=/host/root
+          # Note that disabled collectors are in sync with the alerting rules
+          # When disabling a collector make sure to disable the related alerting rule
           - --no-collector.wifi
           - --no-collector.arp
           - --collector.processes
