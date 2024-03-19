@@ -1,10 +1,14 @@
+{{ range $rsName, $rs := .Values.remoteStorages }}
+{{ range $agentName, $config := $.Values.vmagents }}
+{{- $agentConfig := deepCopy $.Values.vm | merge (deepCopy $.Values.vmagent) | merge $config }}
+{{- $context := deepCopy $ | merge (dict "storage" $rsName "type" "agent" "component" $agentName) }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" . }}-nginx-cm
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "prometheus-benchmark.fullname" $context }}-nginx-cm
   labels:
-    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+    {{- include "prometheus-benchmark.labels" $context | nindent 4 }}
 data:
   nginx.conf: |
     daemon off;
@@ -39,6 +43,8 @@ data:
           proxy_cache_valid 1s;
           proxy_cache_background_update on;
           proxy_cache_use_stale updating;
+        }
       }
     }
-    }
+{{- end }}
+{{- end }}

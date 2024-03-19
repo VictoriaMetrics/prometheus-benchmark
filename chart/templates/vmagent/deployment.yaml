@@ -1,18 +1,19 @@
 {{ range $rsName, $rs := .Values.remoteStorages }}
-{{ range $replica := until ($.Values.writeReplicas | default 1 | int) }}
+{{ range $agentName, $config := $.Values.vmagents }}
+{{- $agentConfig := deepCopy $.Values.vm | merge (deepCopy $.Values.vmagent) | merge $config }}
+{{- $context := deepCopy $ | merge (dict "storage" $rsName "type" "agent" "component" $agentName) }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" $ }}-vmagent-{{ $rsName }}-replica-{{ $replica }}
-  namespace: {{ $.Release.Namespace }}
+  name: {{ include "prometheus-benchmark.fullname" $context }}-vmagent
   labels:
-    {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
+    {{- include "prometheus-benchmark.labels" $context | nindent 4 }}
 spec:
+  replicas: {{ $.Values.writeReplicas }}
   selector:
     matchLabels:
-      job: vmagent
-      remote-storage-name: {{ $rsName | quote }}
-      {{- include "prometheus-benchmark.selectorLabels" $ | nindent 6 }}
+      {{- include "prometheus-benchmark.selectorLabels" $context | nindent 6 }}
   strategy:
     type: Recreate
   template:
@@ -20,9 +21,7 @@ spec:
       annotations:
         checksum/nginx-cm: {{ include (print $.Template.BasePath "/vmagent/nginx-cm.yaml") $ | sha256sum }}
       labels:
-        job: vmagent
-        remote-storage-name: {{ $rsName | quote }}
-        {{- include "prometheus-benchmark.labels" $ | nindent 8 }}
+        {{- include "prometheus-benchmark.labels" $context | nindent 8 }}
     spec:
       {{- with $.Values.nodeSelector }}
       nodeSelector:
@@ -30,36 +29,36 @@ spec:
       {{- end }}
       containers:
       - name: vmagent-config-updater
-        image: "victoriametrics/vmagent-config-updater:v1.1.0"
+        image: victoriametrics/vmagent-config-updater:v1.1.0
         args:
         - --httpListenAddr=:8436
-        - --targetsCount={{ $.Values.targetsCount }}
+        - --targetsCount={{ $agentConfig.targetsCount }}
         - --targetAddr=0.0.0.0:9102
-        - --scrapeInterval={{ $.Values.scrapeInterval }}
-        - --scrapeConfigUpdatePercent={{ $.Values.scrapeConfigUpdatePercent }}
-        - --scrapeConfigUpdateInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        - --scrapeInterval={{ $agentConfig.scrapeInterval }}
+        - --scrapeConfigUpdatePercent={{ $agentConfig.scrapeConfigUpdatePercent }}
+        - --scrapeConfigUpdateInterval={{ $agentConfig.scrapeConfigUpdateInterval }}
       - name: vmagent
         resources:
           requests:
-            cpu: {{ $.Values.writeReplicaCPU }}
-            memory: {{ $.Values.writeReplicaMem }}
+            cpu: {{ $agentConfig.writeReplicaCPU }}
+            memory: {{ $agentConfig.writeReplicaMem }}
           limits:
-            memory: {{ $.Values.writeReplicaMem }}
-        image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
+            memory: {{ $agentConfig.writeReplicaMem }}
+        image: {{ $agentConfig.image.repository }}/vmagent:{{ $agentConfig.image.tag }}
         args:
         - --httpListenAddr=:8429
         - --remoteWrite.showURL
         - --promscrape.config=http://0.0.0.0:8436/api/v1/config
-        - --promscrape.configCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        - --promscrape.configCheckInterval={{ $agentConfig.scrapeConfigUpdateInterval }}
         {{- range $urlReplica := until ($rs.writeURLReplicas | default 1 | int) }}
         - --remoteWrite.url={{ $rs.writeURL }}?extra_label=url_replica={{ $urlReplica }}
         {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
         - --remoteWrite.maxDiskUsagePerURL=100MiB
-        {{- if $.Values.writeConcurrency }}
-        - --remoteWrite.queues={{ $.Values.writeConcurrency }}
+        {{- if $agentConfig.writeConcurrency }}
+        - --remoteWrite.queues={{ $agentConfig.writeConcurrency }}
         {{- end }}
-        - --remoteWrite.label=replica={{ $replica }}
+        - --remoteWrite.label=component={{ $agentName }}
         - --promscrape.disableCompression
         - --promscrape.noStaleMarkers
         {{- if $rs.writeBearerToken }}
@@ -68,7 +67,7 @@ spec:
         {{- if $rs.writeHeaders }}
         - --remoteWrite.headers={{ $rs.writeHeaders }}
         {{- end }}
-        {{- range $rs.vmagentExtraFlags }}
+        {{- range $agentConfig.extraArgs }}
         - {{ . }}
         {{- end }}
         ports:
@@ -143,9 +142,8 @@ spec:
         emptyDir: {}
       - name: nginx-cm
         configMap:
-          name: {{ include "prometheus-benchmark.fullname" $ }}-nginx-cm
+          name: {{ include "prometheus-benchmark.fullname" $context }}-nginx-cm
       - name: nginx-empty
         emptyDir: {}
----
 {{ end }}
 {{ end }}
