@@ -1,10 +1,14 @@
+{{ range $rsName, $config := .Values.remoteStorages }}
+{{- if eq $config.type "vmsingle" }}
+{{- $rsConfig := deepCopy $.Values.vm | merge (deepCopy $.Values.vmsingle) | merge $config }}
+{{- $context := deepCopy $ | merge (dict "storage" $rsName "type" "storage" "component" $rsName) }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name:  {{ include "prometheus-benchmark.fullname" . }}-vmsingle-cm
-  namespace: {{ .Release.Namespace }}
+  name:  {{ include "prometheus-benchmark.fullname" $context }}-vmsingle-cm
   labels:
-    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+    {{- include "prometheus-benchmark.labels" $context | nindent 4 }}
 data:
   scrape.yml: |
     global:
@@ -17,7 +21,7 @@ data:
           own_namespace: true
         selectors:
         - role: pod
-          label: 'chart-name={{ include "prometheus-benchmark.fullname" . }}'
+          label: 'chart-name={{ include "prometheus-benchmark.fullname" $context }}'
       relabel_configs:
       - if: '{__meta_kubernetes_pod_container_port_name="metrics"}'
         action: keep
@@ -31,3 +35,5 @@ data:
         target_label: pod
       - source_labels: [__meta_kubernetes_pod_container_name]
         target_label: container
+{{- end }}
+{{- end }}

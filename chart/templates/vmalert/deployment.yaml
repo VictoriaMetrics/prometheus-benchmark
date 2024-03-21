@@ -1,5 +1,6 @@
 {{ range $rsName, $rs := .Values.remoteStorages }}
 {{- if $rs.readURL -}}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,7 +20,6 @@ spec:
     metadata:
       annotations:
         checksum/vmalert-cm: {{ include (print $.Template.BasePath "/vmalert/vmalert-cm.yaml") $ | sha256sum }}
-        checksum/alertmanager-cm: {{ include (print $.Template.BasePath "/vmalert/alertmanager-cm.yaml") $ | sha256sum }}
       labels:
         job: vmalert
         remote-storage-name: {{ $rsName | quote }}
@@ -34,10 +34,10 @@ spec:
         image: "victoriametrics/vmalert:{{ $.Values.vmtag }}"
         args:
         - --httpListenAddr=:8880
-        - --notifier.url=http://127.0.0.1:9093
         - --rule=/config/alerts.yml
         - --evaluationInterval={{ $.Values.queryInterval }}
         - --datasource.url={{ $rs.readURL }}
+        - --notifier.blackhole=true
         {{- if $rs.readBearerToken }}
         - --datasource.bearerToken={{ $rs.readBearerToken }}
         {{- end }}
@@ -52,21 +52,9 @@ spec:
         volumeMounts:
         - name: vmalert-cfg
           mountPath: /config
-      - name: alertmanager
-        image: prom/alertmanager:v0.24.0
-        args:
-        - --web.listen-address=:9093
-        - --config.file=/config/alertmanager.yml
-        volumeMounts:
-        - name: alertmanager-cfg
-          mountPath: /config
       volumes:
       - name: vmalert-cfg
         configMap:
           name: {{ include "prometheus-benchmark.fullname" $ }}-vmalert-cm
-      - name: alertmanager-cfg
-        configMap:
-          name: {{ include "prometheus-benchmark.fullname" $ }}-alertmanager-cm
----
 {{- end }}
 {{ end }}

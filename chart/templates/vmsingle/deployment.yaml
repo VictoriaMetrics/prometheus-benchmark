@@ -1,33 +1,35 @@
+{{ range $rsName, $config := .Values.remoteStorages }}
+{{- if eq $config.type "vmsingle" }}
+{{- $rsConfig := deepCopy $.Values.vm | merge (deepCopy $.Values.vmsingle) | merge $config }}
+{{- $context := deepCopy $ | merge (dict "storage" $rsName "type" "storage" "component" $rsName) }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "prometheus-benchmark.fullname" $context }}-vmsingle
   labels:
-    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+    {{- include "prometheus-benchmark.labels" $context | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      job: vmsingle
-      {{- include "prometheus-benchmark.selectorLabels" . | nindent 6 }}
+      {{- include "prometheus-benchmark.selectorLabels" $context | nindent 6 }}
   strategy:
     type: Recreate
   template:
     metadata:
       annotations:
-        checksum/vmsingle-cm: {{ include (print .Template.BasePath "/vmsingle/vmsingle-cm.yaml") . | sha256sum }}
+        checksum/vmsingle-cm: {{ include (print $.Template.BasePath "/vmsingle/vmsingle-cm.yaml") $ | sha256sum }}
       labels:
-        job: vmsingle
-        {{- include "prometheus-benchmark.labels" . | nindent 8 }}
+        {{- include "prometheus-benchmark.labels" $context | nindent 8 }}
     spec:
       {{- with $.Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccount: {{ include "prometheus-benchmark.fullname" . }}-vmsingle
+      serviceAccount: {{ include "prometheus-benchmark.fullname" $context }}-vmsingle
       containers:
       - name: vmsingle
-        image: "victoriametrics/victoria-metrics:{{ .Values.vmtag }}"
+        image: {{ $rsConfig.image.repository }}/victoria-metrics:{{ $rsConfig.image.tag }}
         args:
         - --httpListenAddr=:8428
         - --promscrape.config=/config/scrape.yml
@@ -44,7 +46,9 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-cm
+          name: {{ include "prometheus-benchmark.fullname" $context }}-vmsingle-cm
       - name: data
         persistentVolumeClaim:
-          claimName: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-data
+          claimName: {{ include "prometheus-benchmark.fullname" $context }}-vmsingle-data
+{{- end }}
+{{- end }}

@@ -1,13 +1,19 @@
+{{ range $rsName, $config := .Values.remoteStorages }}
+{{- if eq $config.type "vmsingle" }}
+{{- $rsConfig := deepCopy $.Values.vm | merge (deepCopy $.Values.vmsingle) | merge $config }}
+{{- $context := deepCopy $ | merge (dict "storage" $rsName "type" "storage" "component" $rsName) }}
+---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" . }}-vmsingle-data
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "prometheus-benchmark.fullname" $context }}-vmsingle-data
   labels:
-    {{- include "prometheus-benchmark.labels" . | nindent 4 }}
+    {{- include "prometheus-benchmark.labels" $context | nindent 4 }}
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: 100G
+{{- end }}
+{{- end }}
