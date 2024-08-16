@@ -1,6 +1,6 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
-vmtag: "v1.82.1"
+vmtag: "v1.102.1"
 
 # nodeSelector is an optional node selector for placing benchmark pods.
 nodeSelector: {}
