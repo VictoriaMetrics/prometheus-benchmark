@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func parseFlagValue[T cmp.Ordered](v string, defaultValue T) (any, error) {
+func parseFlagValue[T cmp.Ordered | bool](v string, defaultValue T) (any, error) {
 	var err error
 	value := defaultValue
 	if len(v) > 0 {
@@ -27,7 +27,7 @@ func parseFlagValue[T cmp.Ordered](v string, defaultValue T) (any, error) {
 	return value, err
 }
 
-type arrayFlag[T cmp.Ordered] struct {
+type arrayFlag[T cmp.Ordered | bool] struct {
 	values       []T
 	defaultValue T
 }
@@ -68,7 +68,7 @@ func (af *arrayFlag[T]) getArg(idx int) T {
 	return af.values[idx]
 }
 
-func newArrayFlag[T cmp.Ordered](name string, defaultValue T, description string) *arrayFlag[T] {
+func newArrayFlag[T cmp.Ordered | bool](name string, defaultValue T, description string) *arrayFlag[T] {
 	description += "\nSupports an `array` of values separated by comma or specified via multiple flags."
 	a := &arrayFlag[T]{
 		defaultValue: defaultValue,
@@ -81,6 +81,7 @@ var (
 	listenAddr                 = flag.String("httpListenAddr", ":8436", "TCP address for incoming HTTP requests")
 	labelName                  = newArrayFlag("labelName", "instance", "Label name, which differs for all state copies")
 	jobName                    = newArrayFlag("jobName", "node_exporter", "Scrape job name")
+	targetRequiresK8sAuth      = newArrayFlag("targetRequiresK8sAuth", false, "Defines if target requires K8s auth token")
 	targetsCount               = newArrayFlag("targetsCount", 100, "The number of scrape targets to return from -httpListenAddr. Each target has the same address defined by -targetAddr")
 	targetAddr                 = newArrayFlag("targetAddr", "demo.robustperception.io:9090", "Address with port to use as target address the scrape config returned from -httpListenAddr")
 	scrapeInterval             = newArrayFlag("scrapeInterval", time.Second*5, "The scrape_interval to set at the scrape config returned from -httpListenAddr")
@@ -113,6 +114,7 @@ func main() {
 				labelName.getArg(i),
 				jobName.getArg(i),
 				scrapeConfigMetricRelabel.getArg(i),
+				targetRequiresK8sAuth.getArg(i),
 			),
 			updateInterval: scrapeConfigUpdateInterval.getArg(i),
 			updatePercent:  scrapeConfigUpdatePercent.getArg(i) / 100,
@@ -142,7 +144,7 @@ func (c *config) marshalYAML() []byte {
 	return data
 }
 
-func newScrapeConfig(targetsCount int, scrapeInterval time.Duration, targetAddr, labelName, jobName, metricRelabel string) *scrapeConfig {
+func newScrapeConfig(targetsCount int, scrapeInterval time.Duration, targetAddr, labelName, jobName, metricRelabel string, requiresK8sAuth bool) *scrapeConfig {
 	scs := make([]*staticConfig, 0, targetsCount)
 	for i := 0; i < targetsCount; i++ {
 		scs = append(scs, &staticConfig{
@@ -161,9 +163,16 @@ func newScrapeConfig(targetsCount int, scrapeInterval time.Duration, targetAddr,
 			log.Fatalf("failed to parse %q metric relabel config: %v", metricRelabel, err)
 		}
 	}
+	var hc *httpConfig
+	if requiresK8sAuth {
+		hc = &httpConfig{
+			BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+		}
+	}
 	return &scrapeConfig{
 		JobName:              jobName,
 		ScrapeInterval:       scrapeInterval,
+		HTTPConfig:           hc,
 		StaticConfigs:        scs,
 		MetricRelabelConfigs: mrc,
 	}
@@ -214,8 +223,14 @@ type config struct {
 type scrapeConfig struct {
 	JobName              string                 `yaml:"job_name"`
 	ScrapeInterval       time.Duration          `yaml:"scrape_interval"`
+	HTTPConfig           *httpConfig            `yaml:",inline"`
 	StaticConfigs        []*staticConfig        `yaml:"static_configs"`
 	MetricRelabelConfigs []*metricRelabelConfig `yaml:"metric_relabel_configs,omitempty"`
+}
+
+// httpConfig represents HTTP configuration for scrape, such as auth params
+type httpConfig struct {
+	BearerTokenFile string `yaml:"bearer_token_file"`
 }
 
 // staticConfig represents essential parts for `static_config` section of Prometheus config.

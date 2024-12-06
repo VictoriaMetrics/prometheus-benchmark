@@ -3,7 +3,7 @@
 SERVICES_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 DOCKER_NAMESPACE := victoriametrics
-GO_BUILDER_IMAGE := golang:1.22.5-alpine
+GO_BUILDER_IMAGE := golang:1.23.4-alpine
 
 BUILDINFO_TAG ?= $(shell echo $$(git describe --long --all | tr '/' '-')$$( \
 	      git diff-index --quiet HEAD -- || echo '-dirty-'$$(git diff-index -u HEAD | openssl sha1 | cut -c 10-17)))
