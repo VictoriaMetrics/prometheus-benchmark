@@ -2,6 +2,10 @@
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
 vmtag: "v1.102.1"
 
+# Controls whether to deploy a built-in vmsingle for testing
+# Useful for testing remote systems when vmsingle is not needed
+deployTSDB: true
+
 # nodeSelector is an optional node selector for placing benchmark pods.
 nodeSelector: {}
 
