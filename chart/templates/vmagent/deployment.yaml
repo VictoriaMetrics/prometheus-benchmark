@@ -71,6 +71,10 @@ spec:
         {{- range $rs.vmagentExtraFlags }}
         - {{ . }}
         {{- end }}
+        {{- with $rs.vmagentExtraEnvs }}
+        env:
+        {{- toYaml . | nindent 10 }}
+        {{- end }}
         ports:
         - name: metrics
           containerPort: 8429

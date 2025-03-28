@@ -32,6 +32,10 @@ spec:
       containers:
       - name: vmalert
         image: "victoriametrics/vmalert:{{ $.Values.vmtag }}"
+        {{- with $rs.vmalertExtraEnvs }}
+        env:
+        {{- toYaml . | nindent 10 }}
+        {{- end }}
         args:
         - --httpListenAddr=:8880
         - --notifier.url=http://127.0.0.1:9093
@@ -45,6 +49,9 @@ spec:
         - --remoteRead.headers={{ $rs.readHeaders }}
         - --remoteWrite.headers={{ $rs.readHeaders }}
         - --datasource.headers={{ $rs.readHeaders }}
+        {{- end }}
+        {{- range $rs.vmalertExtraFlags }}
+        - {{ . }}
         {{- end }}
         ports:
         - name: metrics

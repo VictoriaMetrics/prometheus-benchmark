@@ -106,3 +106,27 @@ remoteStorages:
     vmagentExtraFlags: []
     # - "--remoteWrite.useVMProto=true"
 
+    vmalertExtraFlags: []
+    # - "--envflag.enable=true"
+
+    # Extra env variables for vmagent container.
+    # See: https://docs.victoriametrics.com/#environment-variables
+    vmagentExtraEnvs: [ ]
+    # - name: "VM_EXTRA_ENV"
+    #   value: "value"
+    # - name: "VM_LICENSE"
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: "vm-license"
+    #       key: "license-key"
+
+    # Extra env variables for vmagent container.
+    # See: https://docs.victoriametrics.com/#environment-variables
+    vmalertExtraEnvs: [ ]
+    # - name: "VM_EXTRA_ENV"
+    #   value: "value"
+    # - name: "VM_LICENSE"
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: "vm-license"
+    #       key: "license-key"
