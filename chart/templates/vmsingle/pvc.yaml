@@ -1,3 +1,4 @@
+{{- if not .Values.disableMonitoring }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -11,3 +12,4 @@ spec:
   resources:
     requests:
       storage: 100G
+{{- end }}
