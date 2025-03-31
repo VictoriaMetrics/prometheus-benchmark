@@ -1,4 +1,4 @@
-{{- if .Values.deployTSDB }}
+{{- if not .Values.disableMonitoring }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
