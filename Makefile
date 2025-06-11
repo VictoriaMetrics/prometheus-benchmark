@@ -2,7 +2,7 @@ include services/vmagent-config-updater/Makefile
 
 # k8s namespace for installing the chart
 # It can be overriden via NAMESPACE environment variable
-NAMESPACE ?= vm-benchmark
+NAMESPACE ?= vm-prom-benchmark
 
 # the deployment prefix
 CHART_NAME := my-bench
@@ -20,6 +20,6 @@ delete:
 	helm uninstall $(CHART_NAME) -n $(NAMESPACE)
 
 monitor:
-	kubectl -n $(NAMESPACE) port-forward deployment/$(CHART_NAME)-prometheus-benchmark-vmsingle 8428
+	kubectl -n $(NAMESPACE) port-forward deployment/$(CHART_NAME)-prometheus-benchmark-monitoring 8428
 
 re-install: delete install

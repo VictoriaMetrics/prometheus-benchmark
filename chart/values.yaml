@@ -1,7 +1,10 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
-vmtag: "v1.93.0"
-promtag: "v2.46.0"
+vmtag: "v1.119.0"
+promtag: "v3.4.1"
+
+cpu: 3
+memory: 12Gi
 
 # targetsCount defines the number of nodeexporter instances to scrape.
 # This option allows to configure the number of active time series to push
@@ -53,6 +56,9 @@ writeConcurrency: 0
 # See also writeURLReplicas option.
 writeReplicas: 1
 
+vmagent:
+  enabled: false
+
 # writeReplicaMem is the memory limit per each pod writer.
 # See writeReplicas option.
 writeReplicaMem: "4Gi"
@@ -69,6 +75,6 @@ remoteStorages:
   # the name of the remote storage to test.
   # The name is added to remote_storage_name label at collected metrics
   prometheus:
-    readURL: "http://prom-prometheus-benchmark-prometheus:9090"
+    readURL: "http://my-bench-prometheus-benchmark-prometheus:9090"
   victoriametrics:
-    readURL: "http://prom-prometheus-benchmark-vmsingle:8428"
+    readURL: "http://my-bench-prometheus-benchmark-vmsingle:8428"
