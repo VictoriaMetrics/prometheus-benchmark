@@ -81,7 +81,10 @@ remoteStorages:
     # For example, the following urls may be used for testing VictoriaMetrics:
     # - http://<victoriametrics-addr>:8428/api/v1/write for single-node VictoriaMetrics
     # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
-    writeURL: "http://victoria-metrics-victoria-metrics-cluster-vminsert.default.svc.cluster.local:8480/insert/0/prometheus/api/v1/write"
+    # It is possible to send data to multiple remote endpoints by specifying
+    # multiple writeURL entries split by ",", e.g.:
+    # writeURL: "http://<vminsert-cluster-1>:8480/insert/0/prometheus/api/v1/write,http://<vminsert-cluster-2>:8480/insert/0/prometheus/api/v1/write"
+    writeURL: ""
     # writeURLReplicas is an optional number of writeURL replicas to send data to.
     # A unique `url_replica` label is added to every writeURL replica via `extra_label` query arg
     # in order to generate unique time series.
