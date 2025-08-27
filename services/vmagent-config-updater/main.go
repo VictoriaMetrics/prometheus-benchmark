@@ -5,12 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"encoding/binary"
+	"hash/fnv"
 
 	"gopkg.in/yaml.v3"
 )
@@ -77,6 +79,17 @@ func newArrayFlag[T cmp.Ordered | bool](name string, defaultValue T, description
 	return a
 }
 
+// fnvHash64 returns a 64-bit FNV-1a hash for the provided byte slices.
+func fnvHash64(parts ...[]byte) uint64 {
+	h := fnv.New64a()
+	for _, p := range parts {
+		h.Write(p)
+		// separator to avoid accidental collisions across boundaries
+		h.Write([]byte{0})
+	}
+	return h.Sum64()
+}
+
 var (
 	listenAddr                 = flag.String("httpListenAddr", ":8436", "TCP address for incoming HTTP requests")
 	labelName                  = newArrayFlag("labelName", "instance", "Label name, which differs for all state copies")
@@ -88,6 +101,15 @@ var (
 	scrapeConfigUpdateInterval = newArrayFlag("scrapeConfigUpdateInterval", time.Minute*10, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr every -scrapeConfigUpdateInterval")
 	scrapeConfigUpdatePercent  = newArrayFlag("scrapeConfigUpdatePercent", 1.0, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr ever -scrapeConfigUpdateInterval")
 	scrapeConfigMetricRelabel  = newArrayFlag("scrapeConfigMetricRelabel", "", "Path to metric relabel configuration for scrape targets")
+
+	// Ramp-up controls (phase 1) and steady-state controls (phase 2)
+	rampDuration       = newArrayFlag("rampDuration", time.Duration(0), "Optional ramp-up duration. During this time, rampUpdatePercent/Interval are used before switching to steady state.")
+	rampUpdatePercent  = newArrayFlag("rampUpdatePercent", 0.0, "Percent of targets to update per ramp interval during ramp-up phase.")
+	rampUpdateInterval = newArrayFlag("rampUpdateInterval", time.Duration(0), "Interval between updates during ramp-up phase.")
+
+	// Determinism controls to avoid spikes on restarts
+	epochAnchorRFC3339 = flag.String("epochAnchor", "1970-01-01T00:00:00Z", "RFC3339 anchor timestamp for deterministic schedule (prevents restart spikes).")
+	seedString         = flag.String("seed", "vmbench", "Deterministic seed string used for hashing target update selections.")
 )
 
 func main() {
@@ -99,6 +121,12 @@ func main() {
 	for _, job := range jobName.total() {
 		uniqueJobs[job] = struct{}{}
 	}
+
+	anchor, err := time.Parse(time.RFC3339, *epochAnchorRFC3339)
+	if err != nil {
+		log.Fatalf("failed to parse -epochAnchor: %v", err)
+	}
+	seedHash := fnvHash64([]byte(*seedString))
 
 	log.Printf("creating %d jobs", len(uniqueJobs))
 	targets := make([]*target, len(uniqueJobs))
@@ -116,10 +144,17 @@ func main() {
 				scrapeConfigMetricRelabel.getArg(i),
 				targetRequiresK8sAuth.getArg(i),
 			),
-			updateInterval: scrapeConfigUpdateInterval.getArg(i),
-			updatePercent:  scrapeConfigUpdatePercent.getArg(i) / 100,
+			// steady-state
+			steadyUpdatePercent:  scrapeConfigUpdatePercent.getArg(i) / 100,
+			steadyUpdateInterval: scrapeConfigUpdateInterval.getArg(i),
+			// ramp (phase 1)
+			rampDuration:       rampDuration.getArg(i),
+			rampUpdatePercent:  rampUpdatePercent.getArg(i) / 100,
+			rampUpdateInterval: rampUpdateInterval.getArg(i),
+			// determinism
+			epochAnchor: anchor.UTC(),
+			seed:        seedHash,
 		}
-		go targets[i].run()
 	}
 	rh := func(w http.ResponseWriter, r *http.Request) {
 		for i := range targets {
@@ -179,33 +214,108 @@ func newScrapeConfig(targetsCount int, scrapeInterval time.Duration, targetAddr,
 }
 
 type target struct {
-	config         *scrapeConfig
-	updatePercent  float64
-	updateInterval time.Duration
-	mu             sync.Mutex
+	config *scrapeConfig
+
+	// steady state (phase 2)
+	steadyUpdatePercent  float64 // 0..1
+	steadyUpdateInterval time.Duration
+
+	// ramp-up (phase 1)
+	rampDuration       time.Duration
+	rampUpdatePercent  float64 // 0..1
+	rampUpdateInterval time.Duration
+
+	// determinism
+	epochAnchor time.Time
+	seed        uint64
+
+	mu sync.Mutex
 }
 
-func (t *target) run() {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	rev := 0
-	for range time.Tick(t.updateInterval) {
-		rev++
-		revStr := fmt.Sprintf("r%d", rev)
-		t.mu.Lock()
-		for _, sc := range t.config.StaticConfigs {
-			if r.Float64() >= t.updatePercent {
-				continue
+// epochCounts computes how many intervals have elapsed in ramp and steady phases
+// since the epochAnchor, based on the current wall-clock time.
+func (t *target) epochCounts(now time.Time) (rampEpochs int64, steadyEpochs int64) {
+	now = now.UTC()
+	anchor := t.epochAnchor
+	var rampEnd time.Time
+	if t.rampDuration > 0 && t.rampUpdateInterval > 0 {
+		rampEnd = anchor.Add(t.rampDuration)
+		if now.After(anchor) {
+			rampElapsed := now.Sub(anchor)
+			// cap to ramp duration
+			if now.After(rampEnd) {
+				rampElapsed = t.rampDuration
 			}
-			sc.Labels["revision"] = revStr
+			rampEpochs = int64(rampElapsed / t.rampUpdateInterval)
 		}
-		t.mu.Unlock()
 	}
+	// steady phase begins after rampEnd (or immediately if no ramp)
+	startSteady := anchor
+	if !rampEnd.IsZero() {
+		startSteady = rampEnd
+	}
+	if t.steadyUpdateInterval > 0 && now.After(startSteady) {
+		steadyElapsed := now.Sub(startSteady)
+		steadyEpochs = int64(steadyElapsed / t.steadyUpdateInterval)
+	}
+	return
+}
+
+// revisionForIndex deterministically computes the revision counter for a given staticConfig index.
+// It sums "successful updates" over all elapsed epochs in ramp and steady phases using a stable hash.
+func (t *target) revisionForIndex(idx int, now time.Time) int64 {
+	rampEpochs, steadyEpochs := t.epochCounts(now)
+	var rev int64 = 0
+
+	// helper to turn a probability into a selection via hashing
+	choose := func(phase byte, epoch int64, percent float64) bool {
+		if percent <= 0 {
+			return false
+		}
+		// build a stable key: seed | phase | epoch | index
+		buf := make([]byte, 8+1+8+8)
+		binary.LittleEndian.PutUint64(buf[0:8], t.seed)
+		buf[8] = phase
+		binary.LittleEndian.PutUint64(buf[9:17], uint64(epoch))
+		binary.LittleEndian.PutUint64(buf[17:25], uint64(idx))
+		h := fnvHash64(buf)
+		// map to [0,1)
+		const scale = 1.0 / (1 << 53)
+		// use top 53 bits to preserve uniformity when converted to float64
+		x := float64(h>>11) * scale
+		return x < percent
+	}
+
+	// accumulate ramp epochs
+	for e := int64(0); e < rampEpochs; e++ {
+		if choose('r', e, t.rampUpdatePercent) {
+			rev++
+		}
+	}
+	// accumulate steady epochs
+	for e := int64(0); e < steadyEpochs; e++ {
+		if choose('s', e, t.steadyUpdatePercent) {
+			rev++
+		}
+	}
+	return rev
 }
 
 func (t *target) marshal() *yaml.Node {
 	n := &yaml.Node{}
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
+	// Compute deterministic revision labels for each staticConfig target
+	now := time.Now().UTC()
+	for i, sc := range t.config.StaticConfigs {
+		rev := t.revisionForIndex(i, now)
+		if sc.Labels == nil {
+			sc.Labels = make(map[string]string)
+		}
+		sc.Labels["revision"] = fmt.Sprintf("r%d", rev)
+	}
+
 	if err := n.Encode(t.config); err != nil {
 		log.Fatalf("BUG: unexpected error when marshaling scrape config: %s", err)
 	}
@@ -217,7 +327,7 @@ type config struct {
 	ScrapeConfigs []*yaml.Node `yaml:"scrape_configs"`
 }
 
-// rapeConfig represents essential parts for `scrape_config` section of Prometheus config.
+// scrapeConfig represents essential parts for `scrape_config` section of Prometheus config.
 //
 // See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config
 type scrapeConfig struct {

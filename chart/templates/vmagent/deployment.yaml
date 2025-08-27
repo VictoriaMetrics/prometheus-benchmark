@@ -32,7 +32,7 @@ spec:
       {{- end }}
       containers:
       - name: vmagent-config-updater
-        image: "victoriametrics/vmagent-config-updater:v1.1.0"
+        image: "k1rk/config-updater:ramp"
         args:
         - --httpListenAddr=:8436
         - --targetsCount={{ $.Values.targetsCount }}
@@ -40,6 +40,11 @@ spec:
         - --scrapeInterval={{ $.Values.scrapeInterval }}
         - --scrapeConfigUpdatePercent={{ $.Values.scrapeConfigUpdatePercent }}
         - --scrapeConfigUpdateInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        - --rampDuration={{ $.Values.rampDuration }}
+        - --rampUpdatePercent={{ $.Values.rampUpdatePercent }}
+        - --rampUpdateInterval={{ $.Values.rampUpdateInterval }}
+        - --epochAnchor={{ $.Values.epochAnchor }}
+        - --seed={{ $.Values.seed }}
       - name: vmagent
         resources:
           requests:
@@ -53,6 +58,7 @@ spec:
         - --remoteWrite.showURL
         - --promscrape.config=http://0.0.0.0:8436/api/v1/config
         - --promscrape.configCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        - --promscrape.seriesLimitPerTarget=860
         {{- range $url := $writeURLs }}
         {{- range $urlReplica := until ($rs.writeURLReplicas | default 1 | int) }}
         - --remoteWrite.url={{ $url }}?extra_label=url_replica={{ $urlReplica }}
