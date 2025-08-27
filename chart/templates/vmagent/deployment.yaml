@@ -32,7 +32,7 @@ spec:
       {{- end }}
       containers:
       - name: vmagent-config-updater
-        image: "k1rk/config-updater:ramp"
+        image: "k1rk/config-updater:ramp-0.2"
         args:
         - --httpListenAddr=:8436
         - --targetsCount={{ $.Values.targetsCount }}
@@ -43,6 +43,7 @@ spec:
         - --rampDuration={{ $.Values.rampDuration }}
         - --rampUpdatePercent={{ $.Values.rampUpdatePercent }}
         - --rampUpdateInterval={{ $.Values.rampUpdateInterval }}
+        - --revisionPoolSize={{ $.Values.revisionPoolSize | default 0 }}
         - --epochAnchor={{ $.Values.epochAnchor }}
         - --seed={{ $.Values.seed }}
       - name: vmagent

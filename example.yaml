@@ -1,0 +1,59 @@
+disableMonitoring: true
+extraLabels:
+  label10: val10
+  label11: val11
+  label12: val12
+  label13: val13
+  label14: val14
+  label15: val15
+  label16: val16
+  label17: val17
+  label18: val18
+  label19: val19
+  label20: val20
+nodeSelector:
+  topology.kubernetes.io/zone: eu-west-1b
+queryInterval: 30s
+remoteStorages:
+  vm:
+    readBearerToken: "token"
+    readHeaders: ''
+    readURL: >-
+      http://vmauth-internal-b.dbaas-test.svc.cluster.local:8426/select/0/prometheus/
+    vmagentExtraEnvs: []
+    vmagentExtraFlags: []
+    vmalertExtraEnvs: []
+    vmalertExtraFlags: []
+    writeBearerToken: "token"
+    writeHeaders: ''
+    writeURL: >-
+      http://vmauth-internal-b.dbaas-test.svc.cluster.local:8426/insert/0/prometheus/api/v1/write
+    writeURLReplicas: 1
+rampDuration: 10m
+rampUpdatePercent: 12
+rampUpdateInterval: 1m
+scrapeConfigUpdateInterval: 10m
+scrapeConfigUpdatePercent: 7.647
+scrapeInterval: 15s
+targetsCount: 1163
+epochAnchor: "2025-08-27T08:10:00Z"
+revisionPoolSize: 3
+seed: run-3h-d
+vmtag: v1.114.0
+writeConcurrency: 0
+writeReplicaCPU: 4
+writeReplicaMem: 6Gi
+writeReplicas: 1
+
+
+### 5m
+# scrapeConfigUpdateInterval: 10m
+# scrapeConfigUpdatePercent: 1.74
+# scrapeInterval: 15s
+# targetsCount: 4836
+
+### 1m
+# scrapeConfigUpdateInterval: 10m
+# scrapeConfigUpdatePercent: 1.74
+# scrapeInterval: 15s
+# targetsCount: 967

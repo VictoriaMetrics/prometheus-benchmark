@@ -101,7 +101,7 @@ var (
 	scrapeConfigUpdateInterval = newArrayFlag("scrapeConfigUpdateInterval", time.Minute*10, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr every -scrapeConfigUpdateInterval")
 	scrapeConfigUpdatePercent  = newArrayFlag("scrapeConfigUpdatePercent", 1.0, "The -scrapeConfigUpdatePercent scrape targets are updated in the scrape config returned from -httpListenAddr ever -scrapeConfigUpdateInterval")
 	scrapeConfigMetricRelabel  = newArrayFlag("scrapeConfigMetricRelabel", "", "Path to metric relabel configuration for scrape targets")
-
+	revisionPoolSize           = newArrayFlag("revisionPoolSize", 0, "If >0, limit distinct revision values per target by cycling r0..r{n-1} to prevent unbounded new-series growth.")
 	// Ramp-up controls (phase 1) and steady-state controls (phase 2)
 	rampDuration       = newArrayFlag("rampDuration", time.Duration(0), "Optional ramp-up duration. During this time, rampUpdatePercent/Interval are used before switching to steady state.")
 	rampUpdatePercent  = newArrayFlag("rampUpdatePercent", 0.0, "Percent of targets to update per ramp interval during ramp-up phase.")
@@ -144,6 +144,8 @@ func main() {
 				scrapeConfigMetricRelabel.getArg(i),
 				targetRequiresK8sAuth.getArg(i),
 			),
+			// revision pool size limit
+			revisionPoolSize: int64(revisionPoolSize.getArg(i)),
 			// steady-state
 			steadyUpdatePercent:  scrapeConfigUpdatePercent.getArg(i) / 100,
 			steadyUpdateInterval: scrapeConfigUpdateInterval.getArg(i),
@@ -215,7 +217,8 @@ func newScrapeConfig(targetsCount int, scrapeInterval time.Duration, targetAddr,
 
 type target struct {
 	config *scrapeConfig
-
+	// revision pool size limit
+	revisionPoolSize int64
 	// steady state (phase 2)
 	steadyUpdatePercent  float64 // 0..1
 	steadyUpdateInterval time.Duration
@@ -312,6 +315,9 @@ func (t *target) marshal() *yaml.Node {
 		rev := t.revisionForIndex(i, now)
 		if sc.Labels == nil {
 			sc.Labels = make(map[string]string)
+		}
+		if t.revisionPoolSize > 0 {
+			rev = rev % t.revisionPoolSize
 		}
 		sc.Labels["revision"] = fmt.Sprintf("r%d", rev)
 	}
