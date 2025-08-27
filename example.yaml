@@ -32,7 +32,7 @@ remoteStorages:
 rampDuration: 10m
 rampUpdatePercent: 12
 rampUpdateInterval: 1m
-scrapeConfigUpdateInterval: 10m
+scrapeConfigUpdateInterval: 1m
 scrapeConfigUpdatePercent: 7.647
 scrapeInterval: 15s
 targetsCount: 1163
