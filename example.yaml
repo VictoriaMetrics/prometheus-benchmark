@@ -1,28 +1,32 @@
 disableMonitoring: true
 extraLabels:
-  label01: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_01
-  label02: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_02
-  label03: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_03
-  label04: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_04
-  label05: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_05
-  label06: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_06
-  label07: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_07
-  label08: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_08
-  label09: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_09
-  label10: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_10
-  label11: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_11
-  label12: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_12
-  label13: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_13
-  label14: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_14
-  label15: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_15
-  label16: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_16
-  label17: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_17
-  label18: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_18
-  label19: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_19
-  label20: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_20
-  label21: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_21
-  label22: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_22
-  label23: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_23
+  label10: value_padding_01234567_10
+  label11: value_padding_01234567_11
+  label12: value_padding_01234567_12
+  label13: value_padding_01234567_13
+  label14: value_padding_01234567_14
+  label15: value_padding_01234567_15
+  label16: value_padding_01234567_16
+  label17: value_padding_01234567_17
+  label18: value_padding_01234567_18
+  label19: value_padding_01234567_19
+  label20: value_padding_01234567_20
+  label21: value_padding_01234567_21
+  label22: value_padding_01234567_22
+  label23: value_padding_01234567_23
+  label24: value_padding_01234567_24
+  label25: value_padding_01234567_25
+  label26: value_padding_01234567_26
+  label27: value_padding_01234567_27
+  label28: value_padding_01234567_28
+  label29: value_padding_01234567_29
+  label30: value_padding_01234567_30
+  label31: value_padding_01234567_31
+  label32: value_padding_01234567_32
+  label33: value_padding_01234567_33
+  label34: value_padding_01234567_34
+  label35: value_padding_01234567_35
+  label36: value_padding_01234567_36
 
 nodeSelector:
   topology.kubernetes.io/zone: eu-west-1a
