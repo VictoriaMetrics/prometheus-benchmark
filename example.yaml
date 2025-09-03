@@ -1,16 +1,29 @@
 disableMonitoring: true
 extraLabels:
-  label10: val10
-  label11: val11
-  label12: val12
-  label13: val13
-  label14: val14
-  label15: val15
-  label16: val16
-  label17: val17
-  label18: val18
-  label19: val19
-  label20: val20
+  label01: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_01
+  label02: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_02
+  label03: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_03
+  label04: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_04
+  label05: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_05
+  label06: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_06
+  label07: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_07
+  label08: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_08
+  label09: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_09
+  label10: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_10
+  label11: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_11
+  label12: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_12
+  label13: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_13
+  label14: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_14
+  label15: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_15
+  label16: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_16
+  label17: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_17
+  label18: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_18
+  label19: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_19
+  label20: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_20
+  label21: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_21
+  label22: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_22
+  label23: value_padding_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789_23
+
 nodeSelector:
   topology.kubernetes.io/zone: eu-west-1a
 queryInterval: 30s
@@ -35,7 +48,7 @@ rampUpdatePercent: 12
 rampUpdateInterval: 1m
 scrapeConfigUpdateInterval: 10m
 scrapeConfigUpdatePercent: 7.647
-scrapeInterval: 15s
+scrapeInterval: 30s
 targetsCount: 1163
 epochAnchor: "2025-08-27T08:10:00Z"
 revisionPoolSize: 3
