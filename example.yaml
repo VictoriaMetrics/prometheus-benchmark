@@ -12,22 +12,23 @@ extraLabels:
   label19: val19
   label20: val20
 nodeSelector:
-  topology.kubernetes.io/zone: eu-west-1b
+  topology.kubernetes.io/zone: eu-west-1a
 queryInterval: 30s
 remoteStorages:
   vm:
     readBearerToken: "token"
     readHeaders: ''
     readURL: >-
-      http://vmauth-internal-b.dbaas-test.svc.cluster.local:8426/select/0/prometheus/
+      http://vmauth-internal-a.dbaas-test.svc.cluster.local:8426/select/0/prometheus/
     vmagentExtraEnvs: []
-    vmagentExtraFlags: []
+    vmagentExtraFlags: 
+      - -remoteWrite.maxRowsPerBlock=1000
     vmalertExtraEnvs: []
     vmalertExtraFlags: []
     writeBearerToken: "token"
     writeHeaders: ''
     writeURL: >-
-      http://vmauth-internal-b.dbaas-test.svc.cluster.local:8426/insert/0/prometheus/api/v1/write
+      http://vmauth-internal-a.dbaas-test.svc.cluster.local:8426/insert/0/prometheus/api/v1/write
     writeURLReplicas: 1
 rampDuration: 10m
 rampUpdatePercent: 12

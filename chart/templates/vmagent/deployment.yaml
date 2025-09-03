@@ -1,3 +1,8 @@
+{{- $extraLabels := "" -}}
+{{- range $k, $v := $.Values.extraLabels }}
+{{- $extraLabels = printf "%s&extra_label=%s=%s" $extraLabels $k $v }}
+{{- end }}
+
 {{ range $rsName, $rs := .Values.remoteStorages }}
 {{ if $rs.writeURL }}
 {{ $writeURLs := $rs.writeURL | splitList "," }}
@@ -62,7 +67,7 @@ spec:
         - --promscrape.seriesLimitPerTarget=860
         {{- range $url := $writeURLs }}
         {{- range $urlReplica := until ($rs.writeURLReplicas | default 1 | int) }}
-        - --remoteWrite.url={{ $url }}?extra_label=url_replica={{ $urlReplica }}
+        - --remoteWrite.url={{ $url }}?extra_label=url_replica={{ $urlReplica }}{{ $extraLabels }}
         {{- end }}
         {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
