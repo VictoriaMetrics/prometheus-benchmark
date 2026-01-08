@@ -1,10 +1,10 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
-vmtag: "v1.102.1"
+vmtag: "v1.133.0"
 
 # Controls whether to deploy a built-in vmsingle for monitoring
 # Useful if there is monitoring already in place and built-in vmsingle is not needed.
-disableMonitoring: false
+disableMonitoring: true
 
 # nodeSelector is an optional node selector for placing benchmark pods.
 nodeSelector: {}
@@ -84,7 +84,7 @@ remoteStorages:
     # It is possible to send data to multiple remote endpoints by specifying
     # multiple writeURL entries split by ",", e.g.:
     # writeURL: "http://<vminsert-cluster-1>:8480/insert/0/prometheus/api/v1/write,http://<vminsert-cluster-2>:8480/insert/0/prometheus/api/v1/write"
-    writeURL: ""
+    writeURL: "http://vmagent-global-write-vmagent.vm.svc.cluster.local.:8429/insert/0/prometheus/api/v1/write"
     # writeURLReplicas is an optional number of writeURL replicas to send data to.
     # A unique `url_replica` label is added to every writeURL replica via `extra_label` query arg
     # in order to generate unique time series.
@@ -98,7 +98,7 @@ remoteStorages:
     # For example, the following urls may be used for testing query performance:
     # - http://<victoriametrics-addr>:8428/ for single-node VictoriaMetrics
     # - http://<vmselect-addr>:8481/select/0/prometheus/ for cluster VictoriaMetrics
-    readURL: ""
+    readURL: "http://global-read-vmauth.vm.svc.cluster.local.:8427/select/0/prometheus"
     # writeBearerToken is an optional bearer token to use when writing data to writeURL.
     writeBearerToken: ""
     # readBearerToken is an optional bearer token to use when querying data from readURL.
