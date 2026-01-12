@@ -14,7 +14,7 @@ nodeSelector: {}
 # Every nodeexporter exposes around 1230 unique metrics, so when targetsCount
 # is set to 1000, then the benchmark generates around 1230*1000=1.23M active time series.
 # See also writeReplicas and writeURLReplicas options.
-targetsCount: 1000
+targetsCount: 750
 
 # scrapeInterval defines how frequently to scrape nodeexporter targets.
 # This option allows to configure data ingestion rate per every remoteStorages.
@@ -35,7 +35,7 @@ queryInterval: 10s
 # For example, if scrapeConfigUpdatePercent is set to 1 for targetsCount=1000,
 # then around 10 targets gets updated labels on every scrape config update.
 # This generates around 1230*10=12300 new time series every scrapeConfigUpdateInterval.
-scrapeConfigUpdatePercent: 1
+scrapeConfigUpdatePercent: 20
 
 # scrapeConfigUpdateInterval specifies how frequently to update labels
 # across scrapeConfigUpdatePercent nodeexporter targets.
@@ -43,7 +43,7 @@ scrapeConfigUpdatePercent: 1
 # For example, if scrapeConfigUpdateInterval is set to 10m for targetsCount=1000
 # and scrapeConfigUpdatePercent=1, then around 10 targets gets updated labels every 10 minutes.
 # This generates around 1230*10=12300 new time series every 10 minutes.
-scrapeConfigUpdateInterval: 10m
+scrapeConfigUpdateInterval: 1m
 
 # writeConcurrency is an optional number of concurrent tcp connections
 # for sending the scraped metrics to remoteStorage.writeURL.
