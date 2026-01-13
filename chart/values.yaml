@@ -14,7 +14,7 @@ nodeSelector: {}
 # Every nodeexporter exposes around 1230 unique metrics, so when targetsCount
 # is set to 1000, then the benchmark generates around 1230*1000=1.23M active time series.
 # See also writeReplicas and writeURLReplicas options.
-targetsCount: 750
+targetsCount: 1500
 
 # scrapeInterval defines how frequently to scrape nodeexporter targets.
 # This option allows to configure data ingestion rate per every remoteStorages.
@@ -84,21 +84,21 @@ remoteStorages:
     # It is possible to send data to multiple remote endpoints by specifying
     # multiple writeURL entries split by ",", e.g.:
     # writeURL: "http://<vminsert-cluster-1>:8480/insert/0/prometheus/api/v1/write,http://<vminsert-cluster-2>:8480/insert/0/prometheus/api/v1/write"
-    writeURL: "http://vmagent-global-write-vmagent.vm.svc.cluster.local.:8429/insert/0/prometheus/api/v1/write"
+    writeURL: "http://vmagent-global-write-vmagent.vmdistributed.svc.cluster.local.:8429/insert/0/prometheus/api/v1/write"
     # writeURLReplicas is an optional number of writeURL replicas to send data to.
     # A unique `url_replica` label is added to every writeURL replica via `extra_label` query arg
     # in order to generate unique time series.
     # This option can be used for increasing the number of active time series
     # to send to writeURL. Please note, `extra_label` feature is supported only by VictoriaMetrics servers.
     # See also writeReplicas option.
-    writeURLReplicas: 1
+    writeURLReplicas: 2
     # readURL is an optional url when query performance needs to be tested.
     # The query performance is tested by sending alerting queries from files/alerts.yaml
     # to readURL.
     # For example, the following urls may be used for testing query performance:
     # - http://<victoriametrics-addr>:8428/ for single-node VictoriaMetrics
     # - http://<vmselect-addr>:8481/select/0/prometheus/ for cluster VictoriaMetrics
-    readURL: "http://global-read-vmauth.vm.svc.cluster.local.:8427/select/0/prometheus"
+    readURL: "http://vmauth-global-read-vmauth.vmdistributed.svc.cluster.local.:8427/select/0/prometheus"
     # writeBearerToken is an optional bearer token to use when writing data to writeURL.
     writeBearerToken: ""
     # readBearerToken is an optional bearer token to use when querying data from readURL.
