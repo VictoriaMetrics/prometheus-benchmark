@@ -14,7 +14,7 @@ nodeSelector: {}
 # Every nodeexporter exposes around 1230 unique metrics, so when targetsCount
 # is set to 1000, then the benchmark generates around 1230*1000=1.23M active time series.
 # See also writeReplicas and writeURLReplicas options.
-targetsCount: 1500
+targetsCount: 1000
 
 # scrapeInterval defines how frequently to scrape nodeexporter targets.
 # This option allows to configure data ingestion rate per every remoteStorages.
