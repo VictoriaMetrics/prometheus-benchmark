@@ -137,3 +137,7 @@ remoteStorages:
     #     secretKeyRef:
     #       name: "vm-license"
     #       key: "license-key"
+
+vmagentConfigUpdater:
+  image: victoriametrics/vmagent-config-updater
+  tag: v1.2.0
