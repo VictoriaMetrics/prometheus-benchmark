@@ -22,10 +22,21 @@ groups:
         summary: Host memory under memory pressure (instance {{ $labels.instance }})
         description: "The node is under heavy memory pressure. High rate of loading memory pages from disk.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
+    # NOTE:
+    # Replaces the original 1w `min_over_time` rule, which required scanning
+    # a full week of data on each evaluation and was too heavy.
+    # This version checks the current state and uses `for: 1w` to ensure
+    # continuous underutilization for one week, reducing query cost
+    # while preserving intent.
+    #
+    # Original:
+    # expr: min_over_time(node_memory_MemFree_bytes[1w]) > node_memory_MemTotal_bytes * .8
+    # for: 0m
+    #
     # You may want to increase the alert manager 'repeat_interval' for this type of alert to daily or weekly
     - alert: HostMemoryIsUnderutilized
-      expr: min_over_time(node_memory_MemFree_bytes[1w]) > node_memory_MemTotal_bytes * .8
-      for: 0m
+      expr: node_memory_MemFree_bytes > node_memory_MemTotal_bytes * .8
+      for: 1w
       labels:
         severity: info
       annotations:
