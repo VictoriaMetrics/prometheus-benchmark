@@ -32,7 +32,7 @@ spec:
       {{- end }}
       containers:
       - name: vmagent-config-updater
-        image: "victoriametrics/vmagent-config-updater:v1.1.0"
+        image: "{{ $.Values.vmagentConfigUpdater.image }}:{{ $.Values.vmagentConfigUpdater.tag }}"
         args:
         - --httpListenAddr=:8436
         - --targetsCount={{ $.Values.targetsCount }}
