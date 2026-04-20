@@ -9,6 +9,9 @@ disableMonitoring: false
 # nodeSelector is an optional node selector for placing benchmark pods.
 nodeSelector: {}
 
+# tolerations is an optional list of tolerations applied to all benchmark pods.
+tolerations: []
+
 # targetsCount defines the number of nodeexporter instances to scrape by every benchmark pod.
 # This option allows to configure the number of active time series to push to remoteStorages.
 # Every nodeexporter exposes around 1230 unique metrics, so when targetsCount
