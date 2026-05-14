@@ -1,0 +1,52 @@
+{{- if .Values.openTelemetryLoad.enabled }}
+{{- range $rsName, $rs := .Values.remoteStorages }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      job: otel-collector
+      remote-storage-name: {{ $rsName | quote }}
+      {{- include "prometheus-benchmark.selectorLabels" $ | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/otel-collector/cm.yaml") $ | sha256sum }}
+      labels:
+        job: otel-collector
+        remote-storage-name: {{ $rsName | quote }}
+        {{- include "prometheus-benchmark.labels" $ | nindent 8 }}
+    spec:
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: otel-collector
+        image: "otel/opentelemetry-collector-contrib:{{ $.Values.openTelemetryLoad.collectorImageTag }}"
+        args:
+        - --config=/config/config.yaml
+        ports:
+        - name: metrics
+          containerPort: 8888
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm
+---
+{{- end }}
+{{- end }}

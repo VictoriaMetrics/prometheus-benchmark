@@ -1,0 +1,67 @@
+{{- if .Values.openTelemetryLoad.enabled }}
+{{- range $rsName, $rs := .Values.remoteStorages }}
+{{- $otelRS := index $.Values.openTelemetryLoad.remoteStorages $rsName }}
+{{- $writeURLs := $rs.writeURL | splitList "," }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
+data:
+  config.yaml: |
+    receivers:
+      host_metrics:
+        collection_interval: {{ $.Values.openTelemetryLoad.scrapeInterval }}
+        scrapers:
+          cpu:
+          disk:
+          load:
+          filesystem:
+          memory:
+          network:
+          paging:
+
+    processors:
+    {{- range $i := until (int $.Values.openTelemetryLoad.targetsCount) }}
+      resource/replica_{{ add $i 1 }}:
+        attributes:
+          - key: otel_source_id
+            value: "{{ add $i 1 }}"
+            action: upsert
+    {{- end }}
+
+    exporters:
+    {{- range $idx, $url := $writeURLs }}
+      otlp_http/{{ $rsName }}_{{ $idx }}:
+        compression: gzip
+        encoding: proto
+        metrics_endpoint: {{ trim $url }}{{ $otelRS.remoteWriteSuffix }}
+        tls:
+          insecure: true
+    {{- end }}
+
+    service:
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: '0.0.0.0'
+                    port: 8888
+      pipelines:
+    {{- $exporterList := list }}
+    {{- range $idx, $_ := $writeURLs }}
+    {{- $exporterList = append $exporterList (printf "otlp_http/%s_%d" $rsName $idx) }}
+    {{- end }}
+    {{- range $i := until (int $.Values.openTelemetryLoad.targetsCount) }}
+        metrics/replica_{{ add $i 1 }}:
+          receivers: [host_metrics]
+          processors: [resource/replica_{{ add $i 1 }}]
+          exporters: [{{ join ", " $exporterList }}]
+    {{- end }}
+---
+{{- end }}
+{{- end }}
