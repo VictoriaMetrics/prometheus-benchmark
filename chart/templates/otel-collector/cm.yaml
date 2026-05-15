@@ -25,11 +25,11 @@ data:
 
     processors:
     {{- range $i := until (int $.Values.openTelemetryLoad.targetsCount) }}
-      resource/replica_{{ add $i 1 }}:
-        attributes:
-          - key: otel_source_id
-            value: "{{ add $i 1 }}"
-            action: upsert
+      transform/replica_{{ add $i 1 }}:
+        metric_statements:
+          - context: datapoint
+            statements:
+              - set(attributes["otel_source_id"], "instance-{{ add $i 1 }}")
     {{- end }}
 
     exporters:
@@ -59,7 +59,7 @@ data:
     {{- range $i := until (int $.Values.openTelemetryLoad.targetsCount) }}
         metrics/replica_{{ add $i 1 }}:
           receivers: [host_metrics]
-          processors: [resource/replica_{{ add $i 1 }}]
+          processors: [transform/replica_{{ add $i 1 }}]
           exporters: [{{ join ", " $exporterList }}]
     {{- end }}
 ---
