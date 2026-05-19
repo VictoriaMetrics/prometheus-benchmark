@@ -1,5 +1,5 @@
-{{- if .Values.openTelemetryLoad.enabled }}
-{{- range $rsName, $rs := .Values.remoteStorages }}
+{{- if .Values.writes.openTelemetry.enabled }}
+{{- range $rsName, $rs := .Values.writes.openTelemetry.remoteStorages }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,7 +34,7 @@ spec:
       {{- end }}
       containers:
       - name: otel-collector
-        image: "otel/opentelemetry-collector-contrib:{{ $.Values.openTelemetryLoad.collectorImageTag }}"
+        image: "otel/opentelemetry-collector-contrib:{{ $.Values.writes.openTelemetry.collectorImageTag }}"
         args:
         - --config=/config/config.yaml
         ports:

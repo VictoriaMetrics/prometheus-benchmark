@@ -1,6 +1,8 @@
-{{- if .Values.openTelemetryLoad.enabled }}
-{{- range $rsName, $rs := .Values.remoteStorages }}
-{{- $otelRS := index $.Values.openTelemetryLoad.remoteStorages $rsName }}
+{{- if .Values.writes.openTelemetry.enabled }}
+{{- range $rsName, $rs := .Values.writes.openTelemetry.remoteStorages }}
+{{- if not $rs.writeURL }}
+{{- fail (printf "writes.openTelemetry.remoteStorages.%s.writeURL must be specified when writes.openTelemetry.enabled is true" $rsName) }}
+{{- end }}
 {{- $writeURLs := $rs.writeURL | splitList "," }}
 apiVersion: v1
 kind: ConfigMap
@@ -13,7 +15,7 @@ data:
   config.yaml: |
     receivers:
       host_metrics:
-        collection_interval: {{ $.Values.openTelemetryLoad.scrapeInterval }}
+        collection_interval: {{ $.Values.writes.openTelemetry.scrapeInterval }}
         scrapers:
           cpu:
           disk:
@@ -24,7 +26,7 @@ data:
           paging:
 
     processors:
-    {{- range $i := until (int $.Values.openTelemetryLoad.targetsCount) }}
+    {{- range $i := until (int $.Values.writes.openTelemetry.targetsCount) }}
       transform/replica_{{ add $i 1 }}:
         metric_statements:
           - context: datapoint
@@ -37,7 +39,7 @@ data:
       otlp_http/{{ $rsName }}_{{ $idx }}:
         compression: gzip
         encoding: proto
-        metrics_endpoint: {{ trim $url }}{{ $otelRS.remoteWriteSuffix }}
+        metrics_endpoint: {{ trim $url }}
         tls:
           insecure: true
     {{- end }}
@@ -56,7 +58,7 @@ data:
     {{- range $idx, $_ := $writeURLs }}
     {{- $exporterList = append $exporterList (printf "otlp_http/%s_%d" $rsName $idx) }}
     {{- end }}
-    {{- range $i := until (int $.Values.openTelemetryLoad.targetsCount) }}
+    {{- range $i := until (int $.Values.writes.openTelemetry.targetsCount) }}
         metrics/replica_{{ add $i 1 }}:
           receivers: [host_metrics]
           processors: [transform/replica_{{ add $i 1 }}]
