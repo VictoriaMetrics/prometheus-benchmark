@@ -112,7 +112,7 @@ writes:
   openTelemetry:
     enabled: false
     collectorImageTag: "0.152.0"
-    # each target generates around 100~300 unique metrics, depending on the host
+    # each target generates around ~100-300 unique series, depending on the host
     targetsCount: 1000
     scrapeInterval: 10s
     # remoteStorages configs the remoteStorages section for open telemetry load
