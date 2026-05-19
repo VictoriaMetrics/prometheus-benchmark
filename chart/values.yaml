@@ -73,6 +73,7 @@ writes:
     # and vmagent instances configurations for prometheus load.
     remoteStorages:
       # name of the remote storage, which should remain consistent with the name used in other workload sections and the read section.
+      # The name is added to remote_storage_name label at collected metrics
       vm:
         # writeURL should contain the url, which accepts Prometheus remote_write protocol at the tested remote storage.
         # For example, the following urls may be used for testing VictoriaMetrics:
@@ -118,6 +119,7 @@ writes:
     # remoteStorages configs the remoteStorages section for open telemetry load
     remoteStorages:
       # name of the remote storage, which should remain consistent with the name used in other workload sections and the read section.
+      # The name is added to remote_storage_name label at collected metrics
       vm:
         # writeURL should contain the url, which accepts OTLP protocol at the tested remote storage.
         # For example, the following urls may be used for testing VictoriaMetrics:
@@ -141,6 +143,8 @@ reads:
   # It is a good rule of thumb to keep it in sync with scrapeInterval.
   queryInterval: 10s
   remoteStorages:
+    # name of the remote storage, which should remain consistent with the name used in other workload sections and the read section.
+    # The name is added to remote_storage_name label at collected metrics
     vm:
       # readURL should contain the url when query performance needs to be tested.
       # The query performance is tested by sending alerting queries from files/alerts.yaml
