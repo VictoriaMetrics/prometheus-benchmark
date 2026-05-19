@@ -1,5 +1,8 @@
 {{- if .Values.writes.openTelemetry.enabled }}
 {{- range $rsName, $rs := .Values.writes.openTelemetry.remoteStorages }}
+{{- $total := $.Values.writes.openTelemetry.targetsCount | int }}
+{{- $chunkSize := 3000 }}
+{{- $chunks := divf $total $chunkSize | ceil | int }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,17 +39,29 @@ spec:
       - name: otel-collector
         image: "otel/opentelemetry-collector-contrib:{{ $.Values.writes.openTelemetry.collectorImageTag }}"
         args:
-        - --config=/config/config.yaml
+        - --config=/config/base/config.yaml
+        {{- range $chunkIdx := until $chunks }}
+        - --config=/config/chunk-{{ $chunkIdx }}/config.yaml
+        {{- end }}
         ports:
         - name: metrics
           containerPort: 8888
         volumeMounts:
-        - name: config
-          mountPath: /config
+        - name: config-base
+          mountPath: /config/base
+        {{- range $chunkIdx := until $chunks }}
+        - name: config-chunk-{{ $chunkIdx }}
+          mountPath: /config/chunk-{{ $chunkIdx }}
+        {{- end }}
       volumes:
-      - name: config
+      - name: config-base
         configMap:
-          name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm
+          name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm-base
+      {{- range $chunkIdx := until $chunks }}
+      - name: config-chunk-{{ $chunkIdx }}
+        configMap:
+          name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm-{{ $chunkIdx }}
+      {{- end }}
 ---
 {{- end }}
 {{- end }}

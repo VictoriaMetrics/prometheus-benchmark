@@ -4,10 +4,17 @@
 {{- fail (printf "writes.openTelemetry.remoteStorages.%s.writeURL must be specified when writes.openTelemetry.enabled is true" $rsName) }}
 {{- end }}
 {{- $writeURLs := $rs.writeURL | splitList "," }}
+{{- $total := $.Values.writes.openTelemetry.targetsCount | int }}
+{{- $chunkSize := 3000 }}
+{{- $chunks := divf $total $chunkSize | ceil | int }}
+{{- $exporterList := list }}
+{{- range $idx, $_ := $writeURLs }}
+{{- $exporterList = append $exporterList (printf "otlp_http/%s_%d" $rsName $idx) }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm
+  name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm-base
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
@@ -25,14 +32,13 @@ data:
           network:
           paging:
 
+    connectors:
+      forward/metrics: {}
+
     processors:
-    {{- range $i := until (int $.Values.writes.openTelemetry.targetsCount) }}
-      transform/replica_{{ add $i 1 }}:
-        metric_statements:
-          - context: datapoint
-            statements:
-              - set(attributes["otel_source_id"], "instance-{{ add $i 1 }}")
-    {{- end }}
+      batch:
+        send_batch_size: 50000
+        timeout: 10s
 
     exporters:
     {{- range $idx, $url := $writeURLs }}
@@ -42,6 +48,9 @@ data:
         metrics_endpoint: {{ trim $url }}
         tls:
           insecure: true
+        sending_queue:
+          queue_size: 10000
+          num_consumers: 10
     {{- end }}
 
     service:
@@ -54,16 +63,44 @@ data:
                     host: '0.0.0.0'
                     port: 8888
       pipelines:
-    {{- $exporterList := list }}
-    {{- range $idx, $_ := $writeURLs }}
-    {{- $exporterList = append $exporterList (printf "otlp_http/%s_%d" $rsName $idx) }}
+        metrics/output:
+          receivers: [forward/metrics]
+          processors: [batch]
+          exporters: [{{ join ", " $exporterList }}]
+---
+{{- range $chunkIdx := until $chunks }}
+{{- $start := mul $chunkIdx $chunkSize }}
+{{- $end := min (add $start $chunkSize) $total }}
+{{- $rangeSize := sub $end $start | int }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus-benchmark.fullname" $ }}-otel-collector-{{ $rsName }}-cm-{{ $chunkIdx }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "prometheus-benchmark.labels" $ | nindent 4 }}
+data:
+  config.yaml: |
+    processors:
+    {{- range $j := until $rangeSize }}
+    {{- $i := add $start $j }}
+      transform/replica_{{ add $i 1 }}:
+        metric_statements:
+          - context: datapoint
+            statements:
+              - set(attributes["otel_source_id"], "instance-{{ add $i 1 }}")
     {{- end }}
-    {{- range $i := until (int $.Values.writes.openTelemetry.targetsCount) }}
+
+    service:
+      pipelines:
+    {{- range $j := until $rangeSize }}
+    {{- $i := add $start $j }}
         metrics/replica_{{ add $i 1 }}:
           receivers: [host_metrics]
           processors: [transform/replica_{{ add $i 1 }}]
-          exporters: [{{ join ", " $exporterList }}]
+          exporters: [forward/metrics]
     {{- end }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
