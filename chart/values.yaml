@@ -1,9 +1,10 @@
 # vmtag is a docker image tag for VictoriaMetrics components,
 # which run inside the prometheus-benchmark - e.g. vmagent, vmalert, vmsingle.
-vmtag: "v1.102.1"
+vmtag: "v1.143.0"
 
 # Controls whether to deploy a built-in vmsingle for monitoring
-# Useful if there is monitoring already in place and built-in vmsingle is not needed.
+# See https://github.com/VictoriaMetrics/prometheus-benchmark#monitoring
+# Disable if there is a monitoring already in place and built-in vmsingle is not needed.
 disableMonitoring: false
 
 # nodeSelector is an optional node selector for placing benchmark pods.
@@ -12,131 +13,168 @@ nodeSelector: {}
 # tolerations is an optional list of tolerations applied to all benchmark pods.
 tolerations: []
 
-# targetsCount defines the number of nodeexporter instances to scrape by every benchmark pod.
-# This option allows to configure the number of active time series to push to remoteStorages.
-# Every nodeexporter exposes around 1230 unique metrics, so when targetsCount
-# is set to 1000, then the benchmark generates around 1230*1000=1.23M active time series.
-# See also writeReplicas and writeURLReplicas options.
-targetsCount: 1000
+# Write (ingestion) workload configuration.
+writes:
+  # Workload generated in Prometheus RW v1 protocol based on node-exporter metrics.
+  prometheus:
+    enabled: true
+    # targetsCount defines the number of nodeexporter instances to scrape by every benchmark pod.
+    # This option allows to configure the number of active time series to push to remoteStorages.
+    # Every nodeexporter exposes around 1230 unique metrics, so when targetsCount
+    # is set to 1000, then the benchmark generates around 1230*1000=1.23M active time series.
+    # See also writeReplicas and writeURLReplicas options.
+    targetsCount: 1000
 
-# scrapeInterval defines how frequently to scrape nodeexporter targets.
-# This option allows to configure data ingestion rate per every remoteStorages.
-# For example, if the benchmark generates 1.23M active time series and scrapeInterval
-# is set to 10s, then the data ingestion rate equals to 1.23M/10s = 123K samples/sec.
-# See also writeReplicas and writeURLReplicas options.
-scrapeInterval: 10s
+    # scrapeInterval defines how frequently to scrape nodeexporter targets.
+    # This option allows to configure data ingestion rate per every remoteStorages.
+    # For example, if the benchmark generates 1.23M active time series and scrapeInterval
+    # is set to 10s, then the data ingestion rate equals to 1.23M/10s = 123K samples/sec.
+    # See also writeReplicas and writeURLReplicas options.
+    scrapeInterval: 10s
 
-# queryInterval is how often to send queries from files/alerts.yaml to remoteStorages.readURL
-# This option can be used for tuning read load at remoteStorages.
-# It is a good rule of thumb to keep it in sync with scrapeInterval.
-queryInterval: 10s
+    # scrapeConfigUpdatePercent is the percent of nodeexporter targets
+    # which are updated with unique label on every scrape config update
+    # (see scrapeConfigUpdateInterval).
+    # This option allows tuning time series churn rate.
+    # For example, if scrapeConfigUpdatePercent is set to 1 for targetsCount=1000,
+    # then around 10 targets gets updated labels on every scrape config update.
+    # This generates around 1230*10=12300 new time series every scrapeConfigUpdateInterval.
+    scrapeConfigUpdatePercent: 1
 
-# scrapeConfigUpdatePercent is the percent of nodeexporter targets
-# which are updated with unique label on every scrape config update
-# (see scrapeConfigUpdateInterval).
-# This option allows tuning time series churn rate.
-# For example, if scrapeConfigUpdatePercent is set to 1 for targetsCount=1000,
-# then around 10 targets gets updated labels on every scrape config update.
-# This generates around 1230*10=12300 new time series every scrapeConfigUpdateInterval.
-scrapeConfigUpdatePercent: 1
+    # scrapeConfigUpdateInterval specifies how frequently to update labels
+    # across scrapeConfigUpdatePercent node-exporter targets.
+    # This option allows tuning time series churn rate.
+    # For example, if scrapeConfigUpdateInterval is set to 10m for targetsCount=1000
+    # and scrapeConfigUpdatePercent=1, then around 10 targets gets updated labels every 10 minutes.
+    # This generates around 1230*10=12300 new time series every 10 minutes.
+    scrapeConfigUpdateInterval: 10m
 
-# scrapeConfigUpdateInterval specifies how frequently to update labels
-# across scrapeConfigUpdatePercent nodeexporter targets.
-# This option allows tuning time series churn rate.
-# For example, if scrapeConfigUpdateInterval is set to 10m for targetsCount=1000
-# and scrapeConfigUpdatePercent=1, then around 10 targets gets updated labels every 10 minutes.
-# This generates around 1230*10=12300 new time series every 10 minutes.
-scrapeConfigUpdateInterval: 10m
+    # writeConcurrency is an optional number of concurrent tcp connections
+    # for sending the scraped metrics to remoteStorage.writeURL.
+    # Increase this value if there is a high network latency between prometheus-benchmark
+    # components and remoteStorage.writeURL.
+    # If this value isn't set, then the number of concurrent connections
+    # for sending the scraped metrics is determined automatically.
+    writeConcurrency: 0
 
-# writeConcurrency is an optional number of concurrent tcp connections
-# for sending the scraped metrics to remoteStorage.writeURL.
-# Increase this value if there is a high network latency between prometheus-benchmark
-# components and remoteStorage.wirteURL.
-# If this value isn't set, then the number of concurrent connections
-# for sending the scraped metrics is determined automatically.
-writeConcurrency: 0
+    # writeReplicas is an optional number of pod writers to run.
+    # Each replica scrapes targetsCount targets and has
+    # its own extra `replica` label attached to time series stored to remote storage.
+    # This option is useful for scaling the writers horizontally.
+    # See also writeURLReplicas option.
+    writeReplicas: 1
 
-# writeReplicas is an optional number of pod writers to run.
-# Each replica scrapes targetsCount targets and has
-# its own extra `replica` label attached to time series stored to remote storage.
-# This option is useful for scaling the writers horizontally.
-# See also writeURLReplicas option.
-writeReplicas: 1
+    # writeReplicaMem is the memory limit per each pod writer.
+    # See writeReplicas option.
+    writeReplicaMem: ""
 
-# writeReplicaMem is the memory limit per each pod writer.
-# See writeReplicas option.
-writeReplicaMem: "4Gi"
+    # writeReplicaCPU is the CPU limit per each pod writer.
+    # See writeReplicas option.
+    writeReplicaCPU: ""
 
-# writeReplicaCPU is the CPU limit per each pod writer.
-# See writeReplicas option.
-writeReplicaCPU: 2
+    # remoteStorages defines a list of remote storages to send scraped metrics to.
+    # A separate installation of vmagents will be deployed for each remoteStorage.
+    remoteStorages:
+      # name of the remote storage, added as `remote_storage_name` label to collected metrics in internal monitoring.
+      # name should remain consistent in other sections for the same remote storage.
+      vm:
+        # writeURL should contain the url, which accepts Prometheus remote_write protocol at the tested remote storage.
+        # For example, the following urls may be used for testing VictoriaMetrics:
+        # - http://<victoriametrics-addr>:8428/api/v1/write for single-node VictoriaMetrics
+        # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
+        # It is possible to send data to multiple remote endpoints by specifying
+        # multiple writeURL entries split by ",", e.g.:
+        # writeURL: "http://<vminsert-cluster-1>:8480/insert/0/prometheus/api/v1/write,http://<vminsert-cluster-2>:8480/insert/0/prometheus/api/v1/write"
+        writeURL: ""
+        # bearerToken is an optional bearer token to use when writing data to writeURL.
+        bearerToken: ""
+        # headers is an optional list of headers in form `header:value`, attached to every write request.
+        # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
+        headers: ""
+        # writeURLReplicas is an optional number of writeURL replicas to send data to.
+        # A unique `url_replica` label is added to every writeURL replica via `extra_label` query arg
+        # in order to generate unique time series.
+        # This option can be used for increasing the number of active time series
+        # to send to writeURL. Please note, `extra_label` feature is supported only by VictoriaMetrics servers.
+        # See also writeReplicas option.
+        writeURLReplicas: 1
+        # vmagentExtraFlags allows to pass additional flags to vmagent.
+        vmagentExtraFlags: []
+        # - "--remoteWrite.forceVMProto=true"
 
-# remoteStorages contains a named list of Prometheus-compatible systems to test.
-# These systems must support data ingestion via Prometheus remote_write protocol.
-# These systems must also support Prometheus querying API if query performance
-# needs to be measured additionally to data ingestion performance.
-remoteStorages:
-  # the name of the remote storage to test.
-  # The name is added to remote_storage_name label at collected metrics
-  vm:
-    # writeURL should contain the url, which accepts Prometheus remote_write
-    # protocol at the tested remote storage.
-    # For example, the following urls may be used for testing VictoriaMetrics:
-    # - http://<victoriametrics-addr>:8428/api/v1/write for single-node VictoriaMetrics
-    # - http://<vminsert-addr>:8480/insert/0/prometheus/api/v1/write for cluster VictoriaMetrics
-    # It is possible to send data to multiple remote endpoints by specifying
-    # multiple writeURL entries split by ",", e.g.:
-    # writeURL: "http://<vminsert-cluster-1>:8480/insert/0/prometheus/api/v1/write,http://<vminsert-cluster-2>:8480/insert/0/prometheus/api/v1/write"
-    writeURL: ""
-    # writeURLReplicas is an optional number of writeURL replicas to send data to.
-    # A unique `url_replica` label is added to every writeURL replica via `extra_label` query arg
-    # in order to generate unique time series.
-    # This option can be used for increasing the number of active time series
-    # to send to writeURL. Please note, `extra_label` feature is supported only by VictoriaMetrics servers.
-    # See also writeReplicas option.
-    writeURLReplicas: 1
-    # readURL is an optional url when query performance needs to be tested.
-    # The query performance is tested by sending alerting queries from files/alerts.yaml
-    # to readURL.
-    # For example, the following urls may be used for testing query performance:
-    # - http://<victoriametrics-addr>:8428/ for single-node VictoriaMetrics
-    # - http://<vmselect-addr>:8481/select/0/prometheus/ for cluster VictoriaMetrics
-    readURL: ""
-    # writeBearerToken is an optional bearer token to use when writing data to writeURL.
-    writeBearerToken: ""
-    # readBearerToken is an optional bearer token to use when querying data from readURL.
-    readBearerToken: ""
-    # writeHeaders is an optional list of headers in form `header:value`, attached to every write request.
-    # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
-    writeHeaders: ""
-    # readHeaders is an optional list of headers in form `header:value`, attached to every read request.
-    # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
-    readHeaders: ""
-    # vmagentExtraFlags allows to pass additional flags to vmagent.
-    vmagentExtraFlags: []
-    # - "--remoteWrite.useVMProto=true"
+        # Extra env variables for vmagent container.
+        # See: https://docs.victoriametrics.com/#environment-variables
+        vmagentExtraEnvs: []
+        # - name: "VM_EXTRA_ENV"
+        #   value: "value"
+        # - name: "VM_LICENSE"
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: "vm-license"
+        #       key: "license-key"
 
-    vmalertExtraFlags: []
-    # - "--envflag.enable=true"
+  # Workload generated in OpenTelemery protocol based on host metrics receiver.
+  openTelemetry:
+    enabled: false
+    collectorImageTag: "0.152.0"
+    # each target generates around ~100-300 unique series, depending on the host
+    targetsCount: 1000
+    scrapeInterval: 10s
+    # remoteStorages defines a list of remote storages to send scraped metrics to.
+    # A separate installation of open telemetry collectors will be deployed for each remoteStorage.
+    remoteStorages:
+      # name of the remote storage, added as `remote_storage_name` label to collected metrics in internal monitoring.
+      # name should remain consistent in other sections for the same remote storage.
+      vm:
+        # writeURL should contain the url, which accepts OTLP protocol at the tested remote storage.
+        # For example, the following urls may be used for testing VictoriaMetrics:
+        # - http://<victoriametrics-addr>:8428/opentelemetry/v1/metrics for single-node VictoriaMetrics
+        # - http://<vminsert-addr>:8480/insert/0/opentelemetry/v1/metrics for cluster VictoriaMetrics
+        # It is possible to send data to multiple remote endpoints by specifying
+        # multiple writeURL entries split by ",", e.g.:
+        # writeURL: "http://<vminsert-cluster-1>:8480/insert/0/opentelemetry/v1/metrics,http://<vminsert-cluster-2>:8480/insert/0/opentelemetry/v1/metrics"
+        writeURL: ""
+        # bearerToken is an optional bearer token to use when writing data to writeURL.
+        bearerToken: ""
+        # headers is an optional list of headers in form `header:value`, attached to every write request.
+        # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
+        headers: ""
 
-    # Extra env variables for vmagent container.
-    # See: https://docs.victoriametrics.com/#environment-variables
-    vmagentExtraEnvs: [ ]
-    # - name: "VM_EXTRA_ENV"
-    #   value: "value"
-    # - name: "VM_LICENSE"
-    #   valueFrom:
-    #     secretKeyRef:
-    #       name: "vm-license"
-    #       key: "license-key"
+# Read workload configuration for testing query performance.
+# The query performance is tested by deploying vmalert as ruler for constantly sending alerting queries from files/alerts.yaml.
+# Query latency and RPS can be measured by looking at vmalert metrics.
+reads:
+  enabled: false
+  # queryInterval is how often to send queries from files/alerts.yaml to remoteStorages.readURL
+  # This option can be used for tuning read load at remoteStorages.
+  # It is a good rule of thumb to keep it in sync with scrapeInterval.
+  queryInterval: 10s
+  remoteStorages:
+    # name of the remote storage, added as `remote_storage_name` label to collected metrics in internal monitoring.
+    # name should remain consistent in other sections for the same remote storage.
+    vm:
+      # readURL should contain the url when query performance needs to be tested.
+      # For example, the following urls may be used for testing query performance:
+      # - http://<victoriametrics-addr>:8428/ for single-node VictoriaMetrics
+      # - http://<vmselect-addr>:8481/select/0/prometheus/ for cluster VictoriaMetrics
+      readURL: ""
+      # vmalertExtraFlags allows to pass additional flags to vmalert.
+      vmalertExtraFlags: []
+      # - "--envflag.enable=true"
 
-    # Extra env variables for vmagent container.
-    # See: https://docs.victoriametrics.com/#environment-variables
-    vmalertExtraEnvs: [ ]
-    # - name: "VM_EXTRA_ENV"
-    #   value: "value"
-    # - name: "VM_LICENSE"
-    #   valueFrom:
-    #     secretKeyRef:
-    #       name: "vm-license"
-    #       key: "license-key"
+      # Extra env variables for vmagent container.
+      # See: https://docs.victoriametrics.com/#environment-variables
+      vmalertExtraEnvs: []
+      # - name: "VM_EXTRA_ENV"
+      #   value: "value"
+      # - name: "VM_LICENSE"
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: "vm-license"
+      #       key: "license-key"
+
+      # bearerToken is an optional bearer token to use when querying data from readURL.
+      bearerToken: ""
+      # readHeaders is an optional list of headers in form `header:value`, attached to every read request.
+      # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
+      headers: ""

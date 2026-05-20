@@ -1,7 +1,10 @@
-{{ range $rsName, $rs := .Values.remoteStorages }}
-{{ if $rs.writeURL }}
+{{- if .Values.writes.prometheus.enabled }}
+{{ range $rsName, $rs := .Values.writes.prometheus.remoteStorages }}
+{{- if not $rs.writeURL }}
+{{- fail (printf "writes.prometheus.remoteStorages.%s.writeURL must be specified when writes.prometheus.enabled is true" $rsName) }}
+{{- end }}
 {{ $writeURLs := $rs.writeURL | splitList "," }}
-{{ range $replica := until ($.Values.writeReplicas | default 1 | int) }}
+{{ range $replica := until ($.Values.writes.prometheus.writeReplicas | default 1 | int) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,24 +42,25 @@ spec:
         image: "victoriametrics/vmagent-config-updater:v1.1.0"
         args:
         - --httpListenAddr=:8436
-        - --targetsCount={{ $.Values.targetsCount }}
+        - --targetsCount={{ $.Values.writes.prometheus.targetsCount }}
         - --targetAddr=0.0.0.0:9102
-        - --scrapeInterval={{ $.Values.scrapeInterval }}
-        - --scrapeConfigUpdatePercent={{ $.Values.scrapeConfigUpdatePercent }}
-        - --scrapeConfigUpdateInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        - --scrapeInterval={{ $.Values.writes.prometheus.scrapeInterval }}
+        - --scrapeConfigUpdatePercent={{ $.Values.writes.prometheus.scrapeConfigUpdatePercent }}
+        - --scrapeConfigUpdateInterval={{ $.Values.writes.prometheus.scrapeConfigUpdateInterval }}
       - name: vmagent
         resources:
           requests:
-            cpu: {{ $.Values.writeReplicaCPU }}
-            memory: {{ $.Values.writeReplicaMem }}
+            cpu: {{ $.Values.writes.prometheus.writeReplicaCPU }}
+            memory: {{ $.Values.writes.prometheus.writeReplicaMem }}
           limits:
-            memory: {{ $.Values.writeReplicaMem }}
+            cpu: {{ $.Values.writes.prometheus.writeReplicaCPU }}
+            memory: {{ $.Values.writes.prometheus.writeReplicaMem }}
         image: "victoriametrics/vmagent:{{ $.Values.vmtag }}"
         args:
         - --httpListenAddr=:8429
         - --remoteWrite.showURL
         - --promscrape.config=http://0.0.0.0:8436/api/v1/config
-        - --promscrape.configCheckInterval={{ $.Values.scrapeConfigUpdateInterval }}
+        - --promscrape.configCheckInterval={{ $.Values.writes.prometheus.scrapeConfigUpdateInterval }}
         {{- range $url := $writeURLs }}
         {{- range $urlReplica := until ($rs.writeURLReplicas | default 1 | int) }}
         - --remoteWrite.url={{ $url }}?extra_label=url_replica={{ $urlReplica }}
@@ -64,17 +68,17 @@ spec:
         {{- end }}
         - --remoteWrite.tmpDataPath=/vmagent-data
         - --remoteWrite.maxDiskUsagePerURL=100MiB
-        {{- if $.Values.writeConcurrency }}
-        - --remoteWrite.queues={{ $.Values.writeConcurrency }}
+        {{- if $.Values.writes.prometheus.writeConcurrency }}
+        - --remoteWrite.queues={{ $.Values.writes.prometheus.writeConcurrency }}
         {{- end }}
         - --remoteWrite.label=replica={{ $replica }}
         - --promscrape.disableCompression
         - --promscrape.noStaleMarkers
-        {{- if $rs.writeBearerToken }}
-        - --remoteWrite.bearerToken={{ $rs.writeBearerToken }}
+        {{- if $rs.bearerToken }}
+        - --remoteWrite.bearerToken={{ $rs.bearerToken }}
         {{- end }}
-        {{- if $rs.writeHeaders }}
-        - --remoteWrite.headers={{ $rs.writeHeaders }}
+        {{- if $rs.headers }}
+        - --remoteWrite.headers={{ $rs.headers }}
         {{- end }}
         {{- range $rs.vmagentExtraFlags }}
         - {{ . }}
