@@ -113,7 +113,7 @@ writes:
         #       name: "vm-license"
         #       key: "license-key"
 
-  # Workload generated in OpenTelemery protocol based on host-exporter metrics.
+  # Workload generated in OpenTelemery protocol based on host metrics receiver.
   openTelemetry:
     enabled: false
     collectorImageTag: "0.152.0"
