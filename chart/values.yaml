@@ -3,7 +3,8 @@
 vmtag: "v1.143.0"
 
 # Controls whether to deploy a built-in vmsingle for monitoring
-# Useful if there is monitoring already in place and built-in vmsingle is not needed.
+# See https://github.com/VictoriaMetrics/prometheus-benchmark#monitoring
+# Disable if there is a monitoring already in place and built-in vmsingle is not needed.
 disableMonitoring: false
 
 # nodeSelector is an optional node selector for placing benchmark pods.
@@ -12,7 +13,9 @@ nodeSelector: {}
 # tolerations is an optional list of tolerations applied to all benchmark pods.
 tolerations: []
 
+# Write (ingestion) workload configuration.
 writes:
+  # Workload generated in Prometheus RW v1 protocol based on node-exporter metrics.
   prometheus:
     enabled: true
     # targetsCount defines the number of nodeexporter instances to scrape by every benchmark pod.
@@ -69,11 +72,11 @@ writes:
     # See writeReplicas option.
     writeReplicaCPU: ""
 
-    # remoteStorages configs the remoteStorages section for prometheus load,
-    # and vmagent instances configurations for prometheus load.
+    # remoteStorages defines a list of remote storages to send scraped metrics to.
+    # A separate installation of vmagents will be deployed for each remoteStorage.
     remoteStorages:
-      # name of the remote storage, which should remain consistent with the name used in other workload sections and the read section.
-      # The name is added to remote_storage_name label at collected metrics
+      # name of the remote storage, added as `remote_storage_name` label to collected metrics in internal monitoring.
+      # name should remain consistent in other sections for the same remote storage.
       vm:
         # writeURL should contain the url, which accepts Prometheus remote_write protocol at the tested remote storage.
         # For example, the following urls may be used for testing VictoriaMetrics:
@@ -110,16 +113,18 @@ writes:
         #       name: "vm-license"
         #       key: "license-key"
 
+  # Workload generated in OpenTelemery protocol based on host-exporter metrics.
   openTelemetry:
     enabled: false
     collectorImageTag: "0.152.0"
     # each target generates around ~100-300 unique series, depending on the host
     targetsCount: 1000
     scrapeInterval: 10s
-    # remoteStorages configs the remoteStorages section for open telemetry load
+    # remoteStorages defines a list of remote storages to send scraped metrics to.
+    # A separate installation of open telemetry collectors will be deployed for each remoteStorage.
     remoteStorages:
-      # name of the remote storage, which should remain consistent with the name used in other workload sections and the read section.
-      # The name is added to remote_storage_name label at collected metrics
+      # name of the remote storage, added as `remote_storage_name` label to collected metrics in internal monitoring.
+      # name should remain consistent in other sections for the same remote storage.
       vm:
         # writeURL should contain the url, which accepts OTLP protocol at the tested remote storage.
         # For example, the following urls may be used for testing VictoriaMetrics:
@@ -135,20 +140,20 @@ writes:
         # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
         headers: ""
 
+# Read workload configuration for testing query performance.
+# The query performance is tested by deploying vmalert as ruler for constantly sending alerting queries from files/alerts.yaml.
+# Query latency and RPS can be measured by looking at vmalert metrics.
 reads:
-  # whether to deploy vmalert as the ruler to send queries to remoteStorages.readURL.
   enabled: false
   # queryInterval is how often to send queries from files/alerts.yaml to remoteStorages.readURL
   # This option can be used for tuning read load at remoteStorages.
   # It is a good rule of thumb to keep it in sync with scrapeInterval.
   queryInterval: 10s
   remoteStorages:
-    # name of the remote storage, which should remain consistent with the name used in other workload sections and the read section.
-    # The name is added to remote_storage_name label at collected metrics
+    # name of the remote storage, added as `remote_storage_name` label to collected metrics in internal monitoring.
+    # name should remain consistent in other sections for the same remote storage.
     vm:
       # readURL should contain the url when query performance needs to be tested.
-      # The query performance is tested by sending alerting queries from files/alerts.yaml
-      # to readURL.
       # For example, the following urls may be used for testing query performance:
       # - http://<victoriametrics-addr>:8428/ for single-node VictoriaMetrics
       # - http://<vmselect-addr>:8481/select/0/prometheus/ for cluster VictoriaMetrics
@@ -156,6 +161,7 @@ reads:
       # vmalertExtraFlags allows to pass additional flags to vmalert.
       vmalertExtraFlags: []
       # - "--envflag.enable=true"
+
       # Extra env variables for vmagent container.
       # See: https://docs.victoriametrics.com/#environment-variables
       vmalertExtraEnvs: []
@@ -166,6 +172,8 @@ reads:
       #     secretKeyRef:
       #       name: "vm-license"
       #       key: "license-key"
+
+      # bearerToken is an optional bearer token to use when querying data from readURL.
       bearerToken: ""
       # readHeaders is an optional list of headers in form `header:value`, attached to every read request.
       # multiple headers must be delimited by '^^': 'header1:value1^^header2:value2'
