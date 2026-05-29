@@ -1,6 +1,6 @@
-## Set of recording rules for nodeexporter
-##  from https://awesome-prometheus-alerts.grep.to/rules.html#host-and-hardware-1
 groups:
+  ## Set of alerting rules for nodeexporter
+  ##  from https://awesome-prometheus-alerts.grep.to/rules.html#host-and-hardware-1
   - name: nodeexporter
     concurrency: 4
     rules:
@@ -341,3 +341,54 @@ groups:
       annotations:
         summary: Host clock not synchronising (instance {{ $labels.instance }})
         description: "Clock not synchronising. Ensure NTP is configured on this host.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+  ## Set of basic alerting rules for host metrics receiver https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/hostmetricsreceiver/README.md
+  ## We assume that OTEL metrics labels were converted to Prometheus-style labels. In VictoriaMetrics it can be done by
+  ## enabling -opentelemetry.usePrometheusNaming cmd-line flag. See https://docs.victoriametrics.com/victoriametrics/integrations/opentelemetry/#label-sanitization
+  - name: hostmetrics
+    concurrency: 4
+    rules:
+      - alert: HostHighCpuLoad
+        expr: 1 - (avg without (cpu) (rate(system_cpu_time_seconds_total{state="idle"}[5m]))) > .80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host high CPU load (instance {{ $labels.otel_source_id }})
+          description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      - alert: HostOutOfMemory
+        expr: (sum(system_memory_usage_bytes{state="free"}) by(otel_source_id) / sum(system_memory_usage_bytes) by(otel_source_id)) < 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of memory (instance {{ $labels.otel_source_id }})
+          description: "Host memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      - alert: HostUnusualDiskReadRate
+        expr: (rate(system_disk_operation_time_seconds_total{direction="read"}[5m]) > .80)
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host unusual disk read rate (instance {{ $labels.otel_source_id }})
+          description: "Disk is too busy (IO wait > 80%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      - alert: HostMemoryUnderMemoryPressure
+        expr: (rate(system_paging_faults_total{type="major"}[5m]) > 1000)
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host memory under memory pressure (instance {{ $labels.otel_source_id }})
+          description: "Host is under heavy memory pressure. High rate of loading memory pages from disk.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      - alert: HostHighNetworkErrors
+        expr: rate(system_network_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host has high network error rate (instance {{ $labels.otel_source_id }})
+          description: "Host is having high network error rate. \n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
