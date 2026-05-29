@@ -367,7 +367,7 @@ groups:
           description: "Host memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
       - alert: HostUnusualDiskReadRate
-        expr: (rate(system_disk_operation_time_seconds_total[5m]) > .80)
+        expr: (rate(system_disk_operation_time_seconds_total{direction="read"}[5m]) > .80)
         for: 2m
         labels:
           severity: warning
