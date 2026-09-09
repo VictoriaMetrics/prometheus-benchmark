@@ -1,6 +1,6 @@
 groups:
   ## Set of alerting rules for nodeexporter
-  ##  from https://awesome-prometheus-alerts.grep.to/rules.html#host-and-hardware-1
+  ##  from https://samber.github.io/awesome-prometheus-alerts/rules/basic-resource-monitoring/host-and-hardware/
   - name: nodeexporter
     concurrency: 4
     rules:
