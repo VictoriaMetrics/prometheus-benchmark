@@ -2,7 +2,7 @@ groups:
   ## Set of alerting rules for nodeexporter
   ##  from https://awesome-prometheus-alerts.grep.to/rules.html#host-and-hardware-1
   - name: nodeexporter
-    concurrency: 4
+    concurrency: 2
     rules:
     - alert: HostOutOfMemory
       expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < .10)
@@ -346,7 +346,7 @@ groups:
   ## We assume that OTEL metrics labels were converted to Prometheus-style labels. In VictoriaMetrics it can be done by
   ## enabling -opentelemetry.usePrometheusNaming cmd-line flag. See https://docs.victoriametrics.com/victoriametrics/integrations/opentelemetry/#label-sanitization
   - name: hostmetrics
-    concurrency: 4
+    concurrency: 1
     rules:
       - alert: HostHighCpuLoad
         expr: 1 - (avg without (cpu) (rate(system_cpu_time_seconds_total{state="idle"}[5m]))) > .80
